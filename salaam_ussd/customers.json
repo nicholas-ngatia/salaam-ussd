@@ -1,0 +1,39 @@
+{
+"customers" : [{
+    "name": "PATRICK YEGON",
+    "msisdn": "254722590742",
+    "acc_no": "0010000718",
+    "branch": "001"
+},
+{
+    "name": "JULIUS MUTWIRI",
+    "msisdn": "254725403189",
+    "acc_no": "0010000720",
+    "branch": "001"
+},
+{
+    "name": "JOHN NJIIRI",
+    "msisdn": "254716254515",
+    "acc_no": "0010000731",
+    "branch": "001"
+},
+{
+    "name": "NAHASHON NGOTHO",
+    "msisdn": "254796018406",
+    "acc_no": "0010000742",
+    "branch": "001"
+},
+{
+    "name": "EUNICE WANGUI",
+    "msisdn": "254716214859",
+    "acc_no": "0010000753",
+    "branch": "001"
+},
+{
+    "name": "GEORGE NGACHA",
+    "msisdn": "254725460158",
+    "acc_no": "0010000800",
+    "branch": "001"
+}
+]
+}
