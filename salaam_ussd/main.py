@@ -1,6 +1,5 @@
 import redis
 import utils
-import ast
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -40,7 +39,7 @@ def ussd():
         elif current_screen == "main_menu_options":
             if ussd_string == "1":
                 acc_no = utils.get_acc_no(phone_number)
-                response = f"CON Please select the account you wish to check.\n1. {acc_no}"
+                response = f'CON Please select the account you wish to check.\n1. {acc_no}'
                 current_screen = "balance_enquiry"
             elif ussd_string == "2":
                 response = "CON Please select who you wish to buy airtime for.\n1. Self\n2. Other"
@@ -66,7 +65,7 @@ def ussd():
             )
         elif current_screen == "balance_enquiry":
             balance = utils.get_balance(phone_number)
-            response = f"CON Your current balance is KES {balance}"
+            response = f'CON Your current balance is KES {balance}'
         elif current_screen == "airtime_menu":
             if ussd_string == "1" or sub_menu == "airtime_amount":
                 response = "CON Please enter amount"
@@ -164,6 +163,7 @@ def ussd():
                     "response": response,
                 },
             )
+        print(response)
         if current_screen == "main_menu_options":
             return response
         else:

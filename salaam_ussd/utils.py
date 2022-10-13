@@ -65,12 +65,12 @@ def get_statement(msisdn):
                 "USERID": "FCATOP",
                 "BRANCH": "001",
                 "SERVICE": "FCUBSAccService",
-                "OPERATION": "QueryAccBal",
+                "OPERATION": "QueryCbStmt",
         }
         body = {
                 "Main-IO": {
-                    "STMT_ID": "000941",
-                    "CUSNO": acc_no,
+                    "STMT_ID": "PLAN_1",
+                    "CUSNO": "000941",
                     }
             }
         result = query_client.service.QueryCbStmtIO(
@@ -116,5 +116,5 @@ def create_transaction(msisdn):
         raise Exception(e)
 
 
-# print(get_balance("254722590742"))
-get_statement("254725460158")
+# print(get_balance("254725460158"))
+# get_statement("254725460158")
