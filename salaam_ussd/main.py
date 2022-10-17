@@ -1,9 +1,12 @@
 import redis
 import utils
+import json
 from flask import Flask, request
 
 app = Flask(__name__)
 r = redis.StrictRedis("localhost", 6379, charset="utf-8", decode_responses=True)
+f = open('customers.json')
+data = json.load(f)['customers']
 
 
 @app.post("/ussd")
@@ -15,6 +18,10 @@ def ussd():
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
+        for key in data:
+            if key['msisdn'] != phone_number:
+                response = "END Coming soon!"
+                return response
         current_screen = "main_menu"
         if session:
             sub_menu = session["sub_menu"] 
