@@ -48,6 +48,15 @@ def first_time_login(msisdn, password):
         f.write(json.dumps(data, indent=4))
         f.close()
 
+def whitelist_check(msisdn):
+    data = load_data()
+    response = False
+    for key in data['customers']:
+        if key['msisdn'] == msisdn:
+            response = True
+            break
+    return response
+
 def get_acc_no(msisdn):
     data = load_data()
     for key in data['customers']:
@@ -183,3 +192,4 @@ def create_transaction(msisdn, amount):
 
 # print(get_balance("254725460158"))
 # get_statement("254725460158")
+# print(whitelist_check('254711891648'))

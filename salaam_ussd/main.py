@@ -17,9 +17,9 @@ def ussd():
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
         data = utils.load_data()
-        for key in data['customers']:
-            if key['msisdn'] != phone_number:
-                response = "END Coming soon!"
+        response = "END Coming soon!"
+        if not utils.whitelist_check(phone_number):
+            response = "END Coming soon!"
             return response
         current_screen = "password"
         if session:
