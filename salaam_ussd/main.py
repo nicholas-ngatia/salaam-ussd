@@ -5,8 +5,6 @@ from flask import Flask, request
 
 app = Flask(__name__)
 r = redis.StrictRedis("localhost", 6379, charset="utf-8", decode_responses=True)
-f = open('customers.json')
-data = json.load(f)['customers']
 
 
 @app.post("/ussd")
@@ -18,11 +16,12 @@ def ussd():
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
-        for key in data:
+        data = utils.load_data()
+        for key in data['customers']:
             if key['msisdn'] != phone_number:
                 response = "END Coming soon!"
                 return response
-        current_screen = "main_menu"
+        current_screen = "password"
         if session:
             sub_menu = session["sub_menu"] 
             current_screen = session["current_screen"]
@@ -31,9 +30,39 @@ def ussd():
             ussd_string = session["response"]
         if ussd_string == "00":
             current_screen = "main_menu"
-        if current_screen == "main_menu":
-            response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
-            current_screen = "main_menu_options"
+        if current_screen == "password":
+            if utils.check_password(phone_number):
+                response = "CON Please enter the 4 digit PIN you will be using to log in to the service"
+                sub_menu = "first_time_login"
+            else:
+                response = "CON Welcome back to Salaam Microfinance Bank. Please enter your PIN"
+                sub_menu = "login"
+            current_screen = "main_menu"
+            r.hmset(
+                session_id,
+                {
+                    "current_screen": current_screen,
+                    "sub_menu": sub_menu,
+                    "previous_screen": "main_menu",
+                    "response": response,
+                },
+            )
+        elif current_screen == "main_menu":
+            if sub_menu == "login":
+                if utils.login(phone_number, ussd_string):
+                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
+                    current_screen = "main_menu_options"
+                else:
+                    response = "CON Wrong PIN input. Please try again."
+                    return response
+            elif sub_menu == "first_time_login":
+                if len(ussd_string) == 4 and isinstance(ussd_string, int):
+                    data = utils.first_time_login(phone_number, ussd_string)
+                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
+                    current_screen = "main_menu_options"
+                else:
+                    response = "CON Wrong PIN format. Please ensure it is 4 digits and try again."
+                    return response
             r.hmset(
                 session_id,
                 {

@@ -1,4 +1,6 @@
 import json
+import requests
+import base64
 from zeep import client
 from zeep.plugins import HistoryPlugin
 from datetime import datetime
@@ -9,22 +11,63 @@ transaction_wsdl_url = 'http://10.54.66.10:7005/FCUBSRTService/FCUBSRTService?WS
 prod_query = "http://10.54.12.79:7003/FCUBSAccService/FCUBSAccService?WSDL"
 prod_transaction = "http://10.54.12.79:7003/FCUBSRTService/FCUBSRTService?WSDL"
 
-f = open('customers.json')
-data = json.load(f)['customers']
 history = HistoryPlugin()
 query_client = client.Client(query_wsdl_url, plugins=[history])
 transaction_client = client.Client(transaction_wsdl_url, plugins=[history])
 
+b2c_url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
+auth_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
+consumer_key = ''
+consumer_secret = ''
+
+def load_data():
+    with open('customers.json', "r") as f:
+        data = json.load(f)
+        print(data)
+        f.close()
+    return data
+
+def get_token():
+    token = base64.b64encode(f'{consumer_key} : {consumer_secret}')
+    response = requests.request("GET", auth_url, headers = { 'Authorization': f'Bearer {token}' })
+    return response.json['token']
+
+def login(msisdn, password):
+    data = load_data()
+    for key in data['customers']:
+        if key['msisdn'] == msisdn:
+            if password == key['password']:
+                return True
+    return False
+
+def first_time_login(msisdn, password):
+    data = load_data()
+    with open('customers.json', 'w') as f:
+        for key in data['customers']:
+            if key['msisdn'] == msisdn:
+                key['password'] = password
+        f.write(json.dumps(data, indent=4))
+        f.close()
 
 def get_acc_no(msisdn):
-        for key in data:
-            if key['msisdn'] == msisdn:
-                acc_no = key['acc_no']
-        return acc_no
+    data = load_data()
+    for key in data['customers']:
+        if key['msisdn'] == msisdn:
+            acc_no = key['acc_no']
+    return acc_no
+
+def check_password(msisdn):
+    data = load_data()
+    for key in data['customers']:
+        if key['msisdn'] == msisdn:
+            if key['password'] == "":
+                return True
+    return False
 
 def get_balance(msisdn):
     try:
-        for key in data:
+        data = load_data()
+        for key in data['customers']:
             if key['msisdn'] == msisdn:
                 acc_no = key['acc_no']
                 branch = key['branch']
@@ -55,7 +98,8 @@ def get_balance(msisdn):
 
 def get_statement(msisdn):
     try:
-        for key in data:
+        data = load_data()
+        for key in data['customers']:
             if key['msisdn'] == msisdn:
                 acc_no = key['acc_no']
                 branch = key['branch']
@@ -83,9 +127,10 @@ def get_statement(msisdn):
     except Exception as e:
         raise Exception(e)
 
-def create_transaction(msisdn):
+def create_transaction(msisdn, amount):
     try:
-        for key in data:
+        data = load_data()
+        for key in data['customers']:
             if key['msisdn'] == msisdn:
                 acc_no = key['acc_no']
                 branch = key['branch']
@@ -102,7 +147,7 @@ def create_transaction(msisdn):
                     "XREF": "1234567",
                     "PRD": "123456",
                     "BRN": "1234567",
-                    "TXNAMT": "1000",
+                    "TXNAMT": amount,
                     "TXNACC": "0020000480",
                     "TXNDATE": "today",
                     }
@@ -111,6 +156,27 @@ def create_transaction(msisdn):
             header,
             body
             )
+        token = get_token()
+        payload = json.dumps({
+            "InitiatorName": "testapiuser",
+            "SecurityCredential": "***********",
+            "Occassion": "StallOwner",
+            "CommandID": "BusinessPayment",
+            "PartyA": "896150",
+            "PartyB": "254711891648",
+            "Remarks": "Test B2C",
+            "Amount": amount,
+            "QueueTimeOutURL": "http://197.248.93.186:8000/b2c/result",
+            "ResultURL": "http://197.248.93.186:8000/b2c/result"
+        })
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.request("POST", b2c_url, headers=headers, data=payload)
+
+        print(response.text)
         print(result)
     except Exception as e:
         raise Exception(e)
@@ -118,3 +184,4 @@ def create_transaction(msisdn):
 
 # print(get_balance("254725460158"))
 # get_statement("254725460158")
+first_time_login('254711891648', 5678)
