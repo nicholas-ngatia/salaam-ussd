@@ -20,7 +20,7 @@ def ussd():
         for key in data['customers']:
             if key['msisdn'] != phone_number:
                 response = "END Coming soon!"
-                return response
+            return response
         current_screen = "password"
         if session:
             sub_menu = session["sub_menu"] 

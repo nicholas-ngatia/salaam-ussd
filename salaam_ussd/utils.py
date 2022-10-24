@@ -23,7 +23,6 @@ consumer_secret = ''
 def load_data():
     with open('customers.json', "r") as f:
         data = json.load(f)
-        print(data)
         f.close()
     return data
 
@@ -184,4 +183,3 @@ def create_transaction(msisdn, amount):
 
 # print(get_balance("254725460158"))
 # get_statement("254725460158")
-first_time_login('254711891648', 5678)
