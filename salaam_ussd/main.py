@@ -17,7 +17,7 @@ def ussd():
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
         data = utils.load_data()
-        response = "END Coming soon!"
+        print(ussd_string, phone_number)
         if not utils.whitelist_check(phone_number):
             response = "END Coming soon!"
             return response
