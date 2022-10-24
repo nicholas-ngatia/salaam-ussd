@@ -17,7 +17,6 @@ def ussd():
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
         data = utils.load_data()
-        print(ussd_string, phone_number)
         if not utils.whitelist_check(phone_number):
             response = "END Coming soon!"
             return response
@@ -49,7 +48,7 @@ def ussd():
             )
         elif current_screen == "main_menu":
             if sub_menu == "login":
-                if utils.login(phone_number, ussd_string):
+                if utils.login(phone_number, ussd_string) == True:
                     response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
                     current_screen = "main_menu_options"
                 else:
