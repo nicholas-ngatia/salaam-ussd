@@ -48,7 +48,6 @@ def ussd():
             )
         elif current_screen == "main_menu":
             if sub_menu == "login":
-                print(utils.login(phone_number, ussd_string))
                 if utils.login(phone_number, ussd_string) == True:
                     response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
                     current_screen = "main_menu_options"
