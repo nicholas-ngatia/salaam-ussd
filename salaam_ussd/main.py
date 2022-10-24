@@ -104,17 +104,17 @@ def ussd():
         elif current_screen == "airtime_menu":
             if ussd_string == "1" or sub_menu == "airtime_amount":
                 response = "CON Please enter amount"
-                sub_menu = "airtime_pin"
+                next_menu = "airtime_pin"
             elif ussd_string == "2":
                 response = "CON Please enter number to send to"
-                sub_menu = "airtime_amount"
+                next_menu = "airtime_amount"
             elif sub_menu == "airtime_pin":
                 if int(ussd_string) < 5 or int(ussd_string) > 100000:
                     response = "CON Invalid amount input. Please try again"
-                    sub_menu = "airtime_amount"
+                    next_menu = "airtime_amount"
                 else:
                     response = "CON Enter PIN"
-                    sub_menu = "airtime_confirm"
+                    next_menu = "airtime_confirm"
             elif sub_menu == "airtime_confirm":
                 response = (
                     "CON Request received. Kindly wait as we process the transaction."
@@ -124,77 +124,77 @@ def ussd():
                 session_id,
                 {
                     "current_screen": current_screen,
-                    "sub_menu": sub_menu,
-                    "previous_screen": "main_menu",
+                    "sub_menu": next_menu,
+                    "previous_screen": sub_menu,
                     "response": response,
                 },
             )
         elif current_screen == "payments":
             if ussd_string == "1":
                 response = "CON Please enter the paybill:"
-                sub_menu = "paybill_number"
+                next_menu = "paybill_number"
             elif ussd_string == "2":
                 response = "CON Please enter buy goods number"
-                sub_menu = "buy_goods_amount"
+                next_menu = "buy_goods_amount"
             elif sub_menu == "paybill_number":
                 response = "CON Please enter the account number:"
-                sub_menu = "buy_goods_amount"
+                next_menu = "buy_goods_amount"
             elif sub_menu == "buy_goods_amount":
                 response = "CON Please enter the amount"
-                sub_menu = "transaction_confirm"
+                next_menu = "transaction_confirm"
             elif sub_menu == "transaction_confirm":
                 response = "CON Please enter PIN"
-                sub_menu = "transaction_success"
+                next_menu = "transaction_success"
             elif sub_menu == "transaction_success":
                 response = "CON Please wait as your transaction is processed."
-                sub_menu = "None"
+                next_menu = "None"
             r.hmset(
                 session_id,
                 {
                     "current_screen": current_screen,
-                    "sub_menu": sub_menu,
-                    "previous_screen": "main_menu",
+                    "sub_menu": next_menu,
+                    "previous_screen": sub_menu,
                     "response": response,
                 },
             )
         elif current_screen == "send_money":
             if ussd_string == "1":
                 response = "CON You will receive a text message with instructions"
-                sub_menu = "None"
+                next_menu = "None"
             elif ussd_string == "2":
                 response = "CON Please enter the amount"
-                sub_menu = "mpesa_send_money"
+                next_menu = "mpesa_send_money"
             elif sub_menu == "mpesa_send_money":
                 response = "CON Please enter PIN:"
-                sub_menu = "mpesa_send_confirm"
+                next_menu = "mpesa_send_confirm"
             elif sub_menu == "mpesa_send_confirm":
                 response = "CON Please wait as your transaction is processed."
-                sub_menu = "None"
+                next_menu = "None"
             r.hmset(
                 session_id,
                 {
                     "current_screen": current_screen,
-                    "sub_menu": sub_menu,
-                    "previous_screen": "main_menu",
+                    "sub_menu": next_menu,
+                    "previous_screen": sub_menu,
                     "response": response,
                 },
             )
         elif current_screen == "withdraw":
             if sub_menu == "None":
                 response = "CON Please enter amount"
-                sub_menu = "agent_pin"
+                next_menu = "agent_pin"
             elif sub_menu == "agent_pin":
                 response = "CON Please enter PIN:"
-                sub_menu = "agent_confirm"
+                next_menu = "agent_confirm"
             elif sub_menu == "agent_confirm":
                 response = "CON Please wait your transaction is processed."
-                sub_menu = "None"
+                next_menu = "None"
             r.hmset(
                 session_id,
                 {
                     "current_screen": current_screen,
-                    "sub_menu": sub_menu,
-                    "previous_screen": "main_menu",
+                    "sub_menu": next_menu,
+                    "previous_screen": sub_menu,
                     "response": response,
                 },
             )
