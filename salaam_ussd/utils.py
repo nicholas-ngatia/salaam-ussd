@@ -35,7 +35,7 @@ def login(msisdn, password):
     data = load_data()
     for key in data['customers']:
         if key['msisdn'] == msisdn:
-            if int(password) == key['password']:
+            if password == key['password']:
                 return True
     return False
 
