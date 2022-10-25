@@ -188,7 +188,19 @@ def create_transaction(msisdn, amount):
         print(result)
     except Exception as e:
         raise Exception(e)
+    
+def int_check(ussd_string):
+    try:
+        int(ussd_string)
+        return True
+    except Exception as e:
+        return False
 
+def phone_number_validate(phone_number):
+    if phone_number[:2] != "254" or phone_number[0] != "0" or len(phone_number) != 10 or len(phone_number) != 12:
+        return False
+    else:
+        return True
 
 # print(get_balance("254725460158"))
 # get_statement("254725460158")

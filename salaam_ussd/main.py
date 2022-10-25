@@ -16,7 +16,6 @@ def ussd():
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
         session = r.hgetall(session_id)
-        data = utils.load_data()
         if not utils.whitelist_check(phone_number):
             response = "END Coming soon!"
             return response
@@ -26,12 +25,13 @@ def ussd():
             current_screen = session["current_screen"]
         if ussd_string == "0":
             current_screen = session["previous_screen"]
-            ussd_string = session["response"]
+            response = session["response"]
+            print(current_screen, sub_menu)
         if ussd_string == "00":
             current_screen = "main_menu"
         if current_screen == "password":
             if utils.check_password(phone_number):
-                response = "CON Please enter the 4 digit PIN you will be using to log in to the service"
+                response = "CON Welcome to Salaam Microfinance Bank. Please enter the 4 digit PIN you will be using to log in to the service"
                 sub_menu = "first_time_login"
             else:
                 response = "CON Welcome back to Salaam Microfinance Bank. Please enter your PIN"
@@ -55,13 +55,16 @@ def ussd():
                     response = "CON Wrong PIN input. Please try again."
                     return response
             elif sub_menu == "first_time_login":
-                if len(ussd_string) == 4 and isinstance(ussd_string, int):
-                    data = utils.first_time_login(phone_number, ussd_string)
+                if len(ussd_string) == 4 and utils.int_check(ussd_string):
+                    utils.first_time_login(phone_number, ussd_string)
                     response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
                     current_screen = "main_menu_options"
                 else:
                     response = "CON Wrong PIN format. Please ensure it is 4 digits and try again."
                     return response
+            else:
+                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
+                current_screen = "main_menu_options"
             r.hmset(
                 session_id,
                 {
@@ -72,7 +75,7 @@ def ussd():
                 },
             )
         elif current_screen == "main_menu_options":
-            if ussd_string == "1":
+            if ussd_string == "1" or sub_menu == 'get_balance':
                 acc_no = utils.get_acc_no(phone_number)
                 response = f'CON Please select the account you wish to check.\n1. {acc_no}'
                 current_screen = "balance_enquiry"
@@ -80,16 +83,17 @@ def ussd():
                 response = "CON Please select who you wish to buy airtime for.\n1. Self\n2. Other"
                 current_screen = "airtime_menu"
             elif ussd_string == "3":
-                response = (
-                    "CON Please select what to pay for.\n1. Paybill\n2. Buy goods"
-                )
-                current_screen = "payments"
+                response = "CON Coming soon! Please check back later!"
+                # response = (
+                #     "CON Please select what to pay for.\n1. Paybill\n2. Buy goods"
+                # )
+                # current_screen = "payments"
             elif ussd_string == "4":
-                response = "CON PLease select what to use.\n1. Account transfer\n2. Send to Mpesa"
+                response = "CON Please select what to use.\n1. Account transfer\n2. Send to Mpesa"
                 current_screen = "send_money"
             elif ussd_string == "5":
-                response = "CON Please enter agent number:"
-                current_screen = "withdraw"
+                response = "CON Coming soon! Please check back later!"
+                # current_screen = "withdraw"
             r.hmset(
                 session_id,
                 {
@@ -101,6 +105,7 @@ def ussd():
         elif current_screen == "balance_enquiry":
             balance = utils.get_balance(phone_number)
             response = f'CON Your current balance is KES {balance}'
+            next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if ussd_string == "1" or sub_menu == "airtime_amount":
                 response = "CON Please enter amount"
@@ -109,12 +114,16 @@ def ussd():
                 response = "CON Please enter number to send to"
                 next_menu = "airtime_amount"
             elif sub_menu == "airtime_pin":
-                if int(ussd_string) < 5 or int(ussd_string) > 100000:
-                    response = "CON Invalid amount input. Please try again"
-                    next_menu = "airtime_amount"
+                if utils.phone_number_validate(phone_number):
+                    if int(ussd_string) < 5 or int(ussd_string) > 100000:
+                        response = "CON Invalid amount input. Please try again"
+                        next_menu = "airtime_amount"
+                    else:
+                        response = "CON Enter PIN"
+                        next_menu = "airtime_confirm"
                 else:
-                    response = "CON Enter PIN"
-                    next_menu = "airtime_confirm"
+                    response = "CON Invalid phone number input, please try again."
+                    return response
             elif sub_menu == "airtime_confirm":
                 response = (
                     "CON Request received. Kindly wait as we process the transaction."
@@ -189,6 +198,7 @@ def ussd():
             elif sub_menu == "agent_confirm":
                 response = "CON Please wait your transaction is processed."
                 next_menu = "None"
+            response = "CON Coming soon! Please check back later!"
             r.hmset(
                 session_id,
                 {
@@ -198,11 +208,10 @@ def ussd():
                     "response": response,
                 },
             )
-        print(response)
-        if current_screen == "main_menu_options":
+        if current_screen == "main_menu" or current_screen == "main_menu_options":
             return response
         else:
-            return response + "\n\n0 Previous menu 00 Main menu"
+            return response + "\n\n00 Main menu"
 
     # except Exception as e:
     #     print(f"Shit's fucking {e}")
