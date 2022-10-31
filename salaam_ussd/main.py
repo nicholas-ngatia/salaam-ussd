@@ -259,7 +259,7 @@ def ussd():
                     "response": response,
                 },
             )
-        if current_screen == "main_menu" or current_screen == "main_menu_options":
+        if current_screen == "main_menu" or current_screen == "main_menu_options" or current_screen == "first_time_login_confirm":
             return response
         else:
             return response + "\n\n00 Main menu"
