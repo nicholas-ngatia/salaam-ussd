@@ -83,11 +83,19 @@ def ussd():
         elif current_screen == "first_time_login_confirm":
             if session['password'] == ussd_string:
                 utils.first_time_login(phone_number, ussd_string)
-                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash"
+                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
                 current_screen = "main_menu_options"
             else:
                 response = "CON The passwords do not match, please try again."
                 return response
+            r.hmset(
+                session_id,
+                {
+                    "current_screen": current_screen,
+                    "previous_screen": "main_menu",
+                    "response": response,
+                },
+            )
         elif current_screen == "main_menu_options":
             if ussd_string == "1" or sub_menu == 'get_balance':
                 acc_no = utils.get_acc_no(phone_number)
