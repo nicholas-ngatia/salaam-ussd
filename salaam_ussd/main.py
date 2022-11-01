@@ -10,6 +10,7 @@ r = redis.StrictRedis("localhost", 6379, charset="utf-8", decode_responses=True)
 
 @app.post("/ussd")
 def ussd():
+    logging.info('STARTING APP')
     try:
         session_id = request.values.get("sessionId", None)
         service_code = request.values.get("serviceCode", None)
@@ -297,5 +298,4 @@ def ussd():
 
 
 if __name__ == "__main__":
-    logging.info('STARTING APP')
     app.run(debug=True)
