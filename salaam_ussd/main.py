@@ -97,12 +97,12 @@ def ussd():
                     "response": response,
                 },
             )
-        elif current_screen == "main_menu_options":
-            if ussd_string == "1" or sub_menu == 'get_balance':
+        elif current_screen == "main_menu_options" or sub_menu == "None":
+            if ussd_string == "1" or sub_menu == "balance_enquiry":
                 acc_no = utils.get_acc_no(phone_number)
                 response = f'CON Please select the account you wish to check.\n1. {acc_no}'
                 current_screen = "balance_enquiry"
-            elif ussd_string == "2":
+            elif ussd_string == "2" or sub_menu == "airtime_menu":
                 response = "CON Please select who you wish to buy airtime for.\n1. Self\n2. Other"
                 current_screen = "airtime_menu"
             elif ussd_string == "3":
@@ -150,7 +150,7 @@ def ussd():
                 response = "CON Please enter number to send to"
                 next_menu = "airtime_amount"
             elif sub_menu == "airtime_pin":
-                msisdn = session['msisdn']
+                msisdn = session['phone_number']
                 if utils.phone_number_validate(msisdn):
                     if int(ussd_string) < 5 or int(ussd_string) > 100000:
                         response = "CON Invalid amount input. Please try again"
