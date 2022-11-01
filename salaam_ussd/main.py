@@ -10,14 +10,13 @@ r = redis.StrictRedis("localhost", 6379, charset="utf-8", decode_responses=True)
 
 @app.post("/ussd")
 def ussd():
-    logging.info('STARTING APP')
     try:
         session_id = request.values.get("sessionId", None)
         service_code = request.values.get("serviceCode", None)
         phone_number = request.values.get("phoneNumber", None)
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
-        logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number}')
+        logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number} - {ussd_string}')
         session = r.hgetall(session_id)
         if not utils.whitelist_check(phone_number):
             response = "END Coming soon!"
@@ -298,4 +297,5 @@ def ussd():
 
 
 if __name__ == "__main__":
+    logging.info('STARTING APP')
     app.run(debug=True)
