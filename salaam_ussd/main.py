@@ -9,7 +9,7 @@ r = redis.StrictRedis("localhost", 6379, charset="utf-8", decode_responses=True)
 
 @app.post("/ussd")
 def ussd():
-    # try:
+    try:
         session_id = request.values.get("sessionId", None)
         service_code = request.values.get("serviceCode", None)
         phone_number = request.values.get("phoneNumber", None)
@@ -135,21 +135,39 @@ def ussd():
             if ussd_string == "1" or sub_menu == "airtime_amount":
                 response = "CON Please enter amount"
                 next_menu = "airtime_pin"
+                if sub_menu == "airtime_amount":
+                    msisdn = ussd_string
+                else:
+                    msisdn = phone_number
+                r.hmset(
+                        session_id,
+                    {
+                        "phone_number": msisdn,
+                    },
+                    )
             elif ussd_string == "2":
                 response = "CON Please enter number to send to"
                 next_menu = "airtime_amount"
             elif sub_menu == "airtime_pin":
-                if utils.phone_number_validate(phone_number):
+                msisdn = session['msisdn']
+                if utils.phone_number_validate(msisdn):
                     if int(ussd_string) < 5 or int(ussd_string) > 100000:
                         response = "CON Invalid amount input. Please try again"
-                        next_menu = "airtime_amount"
+                        return response
                     else:
                         response = "CON Enter PIN"
                         next_menu = "airtime_confirm"
+                        r.hmset(
+                            session_id,
+                            {
+                                "amount": ussd_string,
+                            },
+                    )
                 else:
                     response = "CON Invalid phone number input, please try again."
                     return response
             elif sub_menu == "airtime_confirm":
+                utils.initiate_airtime(session['msisdn'], session['amount'])
                 response = (
                     "CON Request received. Kindly wait as we process the transaction."
                 )
@@ -272,9 +290,9 @@ def ussd():
         else:
             return response + "\n\n00 Main menu"
 
-    # except Exception as e:
-    #     print(f"Shit's fucking {e}")
-    #     return "END An error occurred, please try again later"
+    except Exception as e:
+        print(f"Shit's fucking {e}")
+        return "END An error occurred, please try again later"
 
 
 if __name__ == "__main__":

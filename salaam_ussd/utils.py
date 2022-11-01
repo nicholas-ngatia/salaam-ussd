@@ -17,8 +17,12 @@ transaction_client = client.Client(transaction_wsdl_url, plugins=[history])
 
 b2c_url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
 auth_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
-consumer_key = ''
-consumer_secret = ''
+airtime_auth_url = 'https://api.safaricom.co.ke/oauth2/v3/generate?grant_type=client_credentials'
+airtime_url = 'https://prod.safaricom.co.ke/v1/pretups/api/recharge'
+transaction_key = ''
+transaction_secret = ''
+airtime_key = ''
+airtime_secret = ''
 
 def load_data():
     with open('customers.json', "r") as f:
@@ -27,9 +31,14 @@ def load_data():
     return data
 
 def get_token():
-    token = base64.b64encode(f'{consumer_key} : {consumer_secret}')
+    token = base64.b64encode(f'{transaction_key} : {transaction_secret}')
     response = requests.request("GET", auth_url, headers = { 'Authorization': f'Bearer {token}' })
-    return response.json['token']
+    return response.json['access_token']
+
+def get_airtime_token():
+    token = base64.b64encode(f'{airtime_key} : {airtime_secret}')
+    response = requests.request("POST", airtime_auth_url, headers = { 'Authorization': f'Bearer {token}' })
+    return response.json['access_token']
 
 def login(msisdn, password):
     data = load_data()
@@ -164,7 +173,7 @@ def create_transaction(msisdn, amount):
             header,
             body
             )
-        token = get_token()
+        token = get_token(transaction_key, transaction_secret)
         payload = json.dumps({
             "InitiatorName": "testapiuser",
             "SecurityCredential": "***********",
@@ -201,6 +210,26 @@ def phone_number_validate(phone_number):
         return False
     else:
         return True
+
+def initiate_airtime(phone_number, amount):
+    try:
+        token = get_airtime_token()
+        payload = json.dumps({
+            "msisdn": "msisdn",
+            "amount": amount,
+            "service_pin": "service_pin",
+            "receiverMsisdn": phone_number
+        })
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.request("POST", airtime_url, headers=headers, data=payload)
+
+        return
+    except Exception as e:
+        return e
 
 # print(get_balance("254725460158"))
 # get_statement("254725460158")
