@@ -15,6 +15,7 @@ prod_query = "http://10.54.12.79:7003/FCUBSAccService/FCUBSAccService?WSDL"
 prod_transaction = "http://10.54.12.79:7003/FCUBSRTService/FCUBSRTService?WSDL"
 
 history = HistoryPlugin()
+logging.info('STARTING APP')
 query_client = client.Client(query_wsdl_url, plugins=[history])
 logging.info('CONNECTING TO QUERY WSDL')
 transaction_client = client.Client(transaction_wsdl_url, plugins=[history])
