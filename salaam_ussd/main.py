@@ -1,6 +1,7 @@
 import redis
 import utils
 import json
+import logging
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -15,7 +16,7 @@ def ussd():
         phone_number = request.values.get("phoneNumber", None)
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
-        print(phone_number, ussd_string, session_id)
+        logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number}')
         session = r.hgetall(session_id)
         if not utils.whitelist_check(phone_number):
             response = "END Coming soon!"
@@ -291,9 +292,10 @@ def ussd():
             return response + "\n\n00 Main menu"
 
     except Exception as e:
-        print(f"Shit's fucking {e}")
+        logging.error(f'AN ERROR HAS OCCURED FOR SESSION_ID {session_id}: {e}')
         return "END An error occurred, please try again later"
 
 
 if __name__ == "__main__":
+    logging.info('STARTING APP')
     app.run(debug=True)

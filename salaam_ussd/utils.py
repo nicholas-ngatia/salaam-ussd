@@ -1,4 +1,5 @@
 import json
+import logging
 import requests
 import base64
 from zeep import client
@@ -6,6 +7,8 @@ from zeep.plugins import HistoryPlugin
 from datetime import datetime
 from lxml import etree
 
+
+logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', filemode='w')
 query_wsdl_url = 'http://10.54.66.10:7005/FCUBSAccService/FCUBSAccService?WSDL'
 transaction_wsdl_url = 'http://10.54.66.10:7005/FCUBSRTService/FCUBSRTService?WSDL'
 prod_query = "http://10.54.12.79:7003/FCUBSAccService/FCUBSAccService?WSDL"
@@ -13,7 +16,9 @@ prod_transaction = "http://10.54.12.79:7003/FCUBSRTService/FCUBSRTService?WSDL"
 
 history = HistoryPlugin()
 query_client = client.Client(query_wsdl_url, plugins=[history])
+logging.info('CONNECTING TO QUERY WSDL')
 transaction_client = client.Client(transaction_wsdl_url, plugins=[history])
+logging.info('CONNECTING TO TRANSACTION WSDL')
 
 b2c_url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
 auth_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
