@@ -8,7 +8,7 @@ from datetime import datetime
 from lxml import etree
 
 
-logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', filemode='w')
+logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', filemode='w', level=logging.DEBUG)
 query_wsdl_url = 'http://10.54.66.10:7005/FCUBSAccService/FCUBSAccService?WSDL'
 transaction_wsdl_url = 'http://10.54.66.10:7005/FCUBSRTService/FCUBSRTService?WSDL'
 prod_query = "http://10.54.12.79:7003/FCUBSAccService/FCUBSAccService?WSDL"
