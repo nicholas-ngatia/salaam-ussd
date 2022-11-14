@@ -2,6 +2,7 @@ import json
 import logging
 import requests
 import base64
+import nanoid
 from zeep import client
 from zeep.plugins import HistoryPlugin
 from datetime import datetime
@@ -13,6 +14,7 @@ query_wsdl_url = 'http://10.54.66.10:7005/FCUBSAccService/FCUBSAccService?WSDL'
 transaction_wsdl_url = 'http://10.54.66.10:7005/FCUBSRTService/FCUBSRTService?WSDL'
 prod_query = "http://10.54.12.79:7003/FCUBSAccService/FCUBSAccService?WSDL"
 prod_transaction = "http://10.54.12.79:7003/FCUBSRTService/FCUBSRTService?WSDL"
+ussd_url = "http://10.54.66.16:8282/api/Solid/SubmitRequest"
 
 history = HistoryPlugin()
 logging.info('STARTING APP')
@@ -41,51 +43,184 @@ def get_token():
     response = requests.request("GET", auth_url, headers = { 'Authorization': f'Bearer {token}' })
     return response.json['access_token']
 
+def get_session_token():
+    data = {
+        "message_validation": {
+            "api_user": base64.b64encode(b'africastalking').decode('utf-8'),
+            "api_password": base64.b64encode(b'123456').decode('utf-8')
+        },
+        "message_route": {
+            "interface": "TOKEN"
+        }
+}
+    response = requests.post(ussd_url, json=data).json()
+    return response['error_desc']['token']
+
+def generate_securiy_credentials(msisdn, token, last_value):
+    b64token = base64.b64encode(token.encode('ascii'))
+    ref_no = nanoid.generate(size=20)
+    encoding = f'{token}#{ref_no}#{msisdn}#{last_value}'.encode('ascii')
+    security_stamp = base64.b64encode(encoding).decode('utf-8')
+    return b64token, ref_no, security_stamp
+
+
+def check_customer_details(msisdn, token, imsi):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, imsi)
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "MOBILE",
+            "request_type": "VALIDATE",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "mobile_number": msisdn,
+            "IMSI": imsi,
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=(data)).json()
+    if response['error_code'] == '00':
+        customer_details = response['error_desc']['customerdetails'][0]
+        print(customer_details)
+        return customer_details
+    else: 
+        return False
+
+def set_pin(msisdn, token, pin):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, pin)
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "MOBILE",
+            "request_type": "SETPIN",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "mobile_number": msisdn,
+            "newpin": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=(data)).json()
+    if response['error_code'] == '00':
+        customer_details = response['error_desc']['customerdetails']
+        return customer_details
+    else: 
+        return False
+
+def change_pin(msisdn, token, old_pin, new_pin):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{new_pin}#{old_pin}')
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "MOBILE",
+            "request_type": "CHANGEPIN",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "mobile_number": msisdn,
+            "oldpin": base64.b64encode(old_pin.encode('ascii')).decode('utf-8'),
+            "newpin":  base64.b64encode(new_pin.encode('ascii')).decode('utf-8'),
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=data).json()
+    print(response)
+    return response
+
+def login(msisdn, token, pin):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, pin)
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "MOBILE",
+            "request_type": "LOGIN",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "mobile_number": msisdn,
+            "pin": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=data).json()
+    if response['error_code'] == '00':
+        return response['error_desc']['customerdetails']
+    else: 
+        return False
+
+def account_balance(msisdn, token, customer_account, customer_branch):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}')
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "COREBANKING",
+            "request_type": "BALANCE_REQ",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "CustomerAccount": customer_account,
+            "CustomerBranch":  customer_branch,
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=data).json()
+    if response['error_code'] == '00':
+        print(response)
+        return response['error_desc'][0]
+    else: 
+        return False
+
+def account_ministatement(msisdn, token, customer_account, customer_branch):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}')
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "COREBANKING",
+            "request_type": "MINISTATEMENT_REQ",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "CustomerAccount": customer_account,
+            "CustomerBranch":  customer_branch,
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=data).json()
+    if response['error_code'] == '00':
+        return response['error_desc']
+    else: 
+        return False
+
 def get_airtime_token():
     token = base64.b64encode(f'{airtime_key} : {airtime_secret}')
     response = requests.request("POST", airtime_auth_url, headers = { 'Authorization': f'Bearer {token}' })
     return response.json['access_token']
-
-def login(msisdn, password):
-    data = load_data()
-    for key in data['customers']:
-        if key['msisdn'] == msisdn:
-            if password == key['password']:
-                return True
-    return False
-
-def first_time_login(msisdn, password):
-    data = load_data()
-    with open('customers.json', 'w') as f:
-        for key in data['customers']:
-            if key['msisdn'] == msisdn:
-                key['password'] = password
-        f.write(json.dumps(data, indent=4))
-        f.close()
-
-def whitelist_check(msisdn):
-    data = load_data()
-    response = False
-    for key in data['customers']:
-        if key['msisdn'] == msisdn:
-            response = True
-            break
-    return response
-
-def get_acc_no(msisdn):
-    data = load_data()
-    for key in data['customers']:
-        if key['msisdn'] == msisdn:
-            acc_no = key['acc_no']
-    return acc_no
-
-def check_password(msisdn):
-    data = load_data()
-    for key in data['customers']:
-        if key['msisdn'] == msisdn:
-            if key['password'] == "":
-                return True
-    return False
 
 def get_balance(msisdn):
     try:
@@ -133,11 +268,12 @@ def get_statement(msisdn):
                 "BRANCH": "001",
                 "SERVICE": "FCUBSAccService",
                 "OPERATION": "QueryCbStmt",
+                "FUNCTIONID": "CSRCSTAD"
         }
         body = {
                 "Main-IO": {
                     "STMT_ID": "PLAN_1",
-                    "CUSNO": "000941",
+                    "CUSNO": "000864",
                     }
             }
         result = query_client.service.QueryCbStmtIO(
@@ -212,8 +348,11 @@ def int_check(ussd_string):
         return False
 
 def phone_number_validate(phone_number):
-    if phone_number[:2] != "254" or phone_number[0] != "0" or len(phone_number) != 10 or len(phone_number) != 12:
-        return False
+    if (phone_number[:2] != "254" and len(phone_number) != 12):
+        if (phone_number[0] != "0" and len(phone_number) != 10):
+            return False
+        else: 
+            return True
     else:
         return True
 
@@ -238,5 +377,6 @@ def initiate_airtime(phone_number, amount):
         return e
 
 # print(get_balance("254725460158"))
-# get_statement("254725460158")
+# get_statement("+254725460158")
 # print(whitelist_check('254711891648'))
+# print(phone_number_validate('0711891648'))

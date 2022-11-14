@@ -1,6 +1,6 @@
 import redis
 import utils
-import json
+import ast
 import logging
 from flask import Flask, request
 
@@ -18,9 +18,6 @@ def ussd():
         ussd_string = ussd_string.split("*")[-1]
         logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number} - {ussd_string}')
         session = r.hgetall(session_id)
-        if not utils.whitelist_check(phone_number):
-            response = "END Coming soon!"
-            return response
         current_screen = "password"
         if session:
             sub_menu = session["sub_menu"] 
@@ -32,12 +29,19 @@ def ussd():
         if ussd_string == "00":
             current_screen = "main_menu"
         if current_screen == "password":
-            if utils.check_password(phone_number):
+            token = utils.get_session_token()
+            logging.info(f'Token received: {token}')
+            result = utils.check_customer_details(phone_number, token, 'test')
+            logging.info(f'Customer retrieved: {result}')
+            if result['password_change'] == 1:
                 response = "CON Welcome to Salaam Microfinance Bank. Please enter the 4 digit PIN you will be using to log in to the service"
                 sub_menu = "first_time_login"
-            else:
+            elif result['password_change'] == 0:
                 response = "CON Welcome back to Salaam Microfinance Bank. Please enter your PIN"
                 sub_menu = "login"
+            else:
+                respose = "END You are currenly not permitted to use this service. Please contact Salaam bank to gain access"
+                return response
             current_screen = "main_menu"
             r.hmset(
                 session_id,
@@ -45,17 +49,25 @@ def ussd():
                     "current_screen": current_screen,
                     "sub_menu": sub_menu,
                     "previous_screen": "main_menu",
+                    "token": token,
                     "response": response,
                 },
             )
         elif current_screen == "main_menu":
             if sub_menu == "login":
-                if utils.login(phone_number, ussd_string) == True:
+                details = utils.login(phone_number, session['token'], ussd_string)
+                if details:
                     response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
                     current_screen = "main_menu_options"
                 else:
                     response = "CON Wrong PIN input. Please try again."
                     return response
+                r.hmset(
+                        session_id,
+                    {
+                        "customer_details": str(details),
+                    },
+                    )
             elif sub_menu == "first_time_login":
                 if len(ussd_string) == 4 and utils.int_check(ussd_string):
                     response = "CON Please confirm the PIN:"
@@ -83,9 +95,12 @@ def ussd():
             )
         elif current_screen == "first_time_login_confirm":
             if session['password'] == ussd_string:
-                utils.first_time_login(phone_number, ussd_string)
-                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
-                current_screen = "main_menu_options"
+                result = utils.set_pin(phone_number, session['token'], ussd_string)
+                if result:
+                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
+                    current_screen = "main_menu_options"
+                else:
+                    raise Exception
             else:
                 response = "CON The passwords do not match, please try again."
                 return response
@@ -95,12 +110,17 @@ def ussd():
                     "current_screen": current_screen,
                     "previous_screen": "main_menu",
                     "response": response,
+                    "customer_details": str(result),
                 },
             )
-        elif current_screen == "main_menu_options" or sub_menu == "None":
+        elif current_screen == "main_menu_options":
             if ussd_string == "1" or sub_menu == "balance_enquiry":
-                acc_no = utils.get_acc_no(phone_number)
-                response = f'CON Please select the account you wish to check.\n1. {acc_no}'
+                customer_details = ast.literal_eval(session['customer_details'])
+                acc_no = ""
+                i = 1
+                for customer in customer_details:
+                    acc_no += f'{i}. {customer["account_number"]}\n'
+                response = f'CON Please select the account you wish to check.\n {acc_no}'
                 current_screen = "balance_enquiry"
             elif ussd_string == "2" or sub_menu == "airtime_menu":
                 response = "CON Please select who you wish to buy airtime for.\n1. Self\n2. Other"
@@ -118,7 +138,7 @@ def ussd():
                 response = "CON Coming soon! Please check back later!"
                 # current_screen = "withdraw"
             elif ussd_string == "6":
-                response = "CON 1. Change PIN"
+                response = "CON 1. Ministatement\n2. Change PIN"
                 current_screen = "my_account"
             r.hmset(
                 session_id,
@@ -129,8 +149,17 @@ def ussd():
                 },
             )
         elif current_screen == "balance_enquiry":
-            balance = utils.get_balance(phone_number)
-            response = f'CON Your current balance is KES {balance}'
+            customer_details = ast.literal_eval(session['customer_details'])
+            selection = int(ussd_string) - 1
+            acc_no = customer_details[selection]['account_number']
+            balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'], '002')
+            if not balance["ACY_CURR_BAL"]:
+                current_bal = 0
+                withdrawable_bal = 0
+            else:
+                current_bal = balance["ACY_CURR_BAL"]
+                withdrawable_bal = balance["ACY_WITHDRAWABLE_BAL"]
+            response = f'CON Balances for account {acc_no}:\n Current balance: KES {current_bal}\nWithithdrawable balance: KES {withdrawable_bal}'
             next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if ussd_string == "1" or sub_menu == "airtime_amount":
@@ -152,7 +181,7 @@ def ussd():
             elif sub_menu == "airtime_pin":
                 msisdn = session['phone_number']
                 if utils.phone_number_validate(msisdn):
-                    if int(ussd_string) < 5 or int(ussd_string) > 100000:
+                    if int(ussd_string) < 5 or int(ussd_string) > 100000 or utils.int_check(ussd_string):
                         response = "CON Invalid amount input. Please try again"
                         return response
                     else:
@@ -253,10 +282,39 @@ def ussd():
                 },
             )
         elif current_screen == "my_account":
-            if sub_menu == "None" or ussd_string == "1":
-                response = "CON Please enter new PIN:"
+            if ussd_string == "1" and sub_menu != "ministatement":
+                customer_details = ast.literal_eval(session['customer_details'])
+                acc_no = ""
+                i = 1
+                for customer in customer_details:
+                    acc_no += f'{i}. {customer["account_number"]}\n'
+                response = f'CON Please select the account you wish to check.\n{acc_no}'
+                next_menu = "ministatement"
+            elif ussd_string == "2":
+                response = "CON Please enter old PIN:"
                 next_menu = "change_password"
+            elif sub_menu == "ministatement":
+                customer_details = ast.literal_eval(session['customer_details'])
+                selection = int(ussd_string) - 1
+                acc_no = customer_details[selection]['account_number']
+                statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'], '002')
+                if len(statement) == 0:
+                    response = "CON No recent transactions found"
+                else:
+                    response = "CON "
+                    for s in statement[:3]:
+                        response += f'{s["TRANSDATE"] - s["NARRATION"]} - KES {s["AMOUNT"]}'
+                next_menu = "None"
             elif sub_menu == "change_password":
+                response = "CON Please enter new PIN:"
+                next_menu = "change_password_con"
+                r.hmset(
+                        session_id,
+                    {
+                        "old_password": ussd_string,
+                    },
+                    )
+            elif sub_menu == "change_password_con": 
                 if utils.int_check(ussd_string):
                     response = "CON Please confirm new PIN:"
                     next_menu = "confirm_password"
@@ -271,8 +329,12 @@ def ussd():
                     return response
             elif sub_menu == "confirm_password":
                 if session['password'] == ussd_string:
-                    utils.first_time_login(phone_number, ussd_string)
-                    response = "CON PIN successfully changed"
+                    result = utils.change_pin(phone_number, session['token'], session['old_password'], ussd_string)
+                    print(result)
+                    if result['error_code'] == "00":
+                        response = "CON PIN successfully changed"
+                    else:
+                        response = "CON Wrong old PIN input. Please start again."
                     next_menu = "None"
                 else:
                     response = "CON The two PINs do not match. Please try again."
@@ -286,6 +348,7 @@ def ussd():
                     "response": response,
                 },
             )
+        print(sub_menu, current_screen)
         if current_screen == "main_menu" or current_screen == "main_menu_options" or current_screen == "first_time_login_confirm":
             return response
         else:
@@ -298,4 +361,4 @@ def ussd():
 
 if __name__ == "__main__":
     logging.info('STARTING APP')
-    app.run(debug=True)
+    app.run(debug=True, port=6000)
