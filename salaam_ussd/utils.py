@@ -188,7 +188,7 @@ def account_balance(msisdn, token, customer_account, customer_branch):
     response = requests.post(ussd_url, json=data).json()
     if response['error_code'] == '00':
         print(response)
-        return response['error_desc'][0]
+        return response['error_desc']
     else: 
         return False
 
