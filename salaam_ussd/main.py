@@ -13,7 +13,7 @@ def ussd():
     try:
         session_id = request.values.get("sessionId", None)
         service_code = request.values.get("serviceCode", None)
-        phone_number = request.values.get("phoneNumber", None)
+        phone_number = request.values.get("phoneNumber", None).split("+")[-1]
         ussd_string = str(request.values.get("text", "default"))
         ussd_string = ussd_string.split("*")[-1]
         logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number} - {ussd_string}')
@@ -33,15 +33,15 @@ def ussd():
             logging.info(f'Token received: {token}')
             result = utils.check_customer_details(phone_number, token, 'test')
             logging.info(f'Customer retrieved: {result}')
-            if result['password_change'] == 1:
+            if not result:
+                response = "END You are currenly not permitted to use this service. Please contact Salaam bank to gain access"
+                return response
+            elif result['password_change'] == 1:
                 response = "CON Welcome to Salaam Microfinance Bank. Please enter the 4 digit PIN you will be using to log in to the service"
                 sub_menu = "first_time_login"
             elif result['password_change'] == 0:
                 response = "CON Welcome back to Salaam Microfinance Bank. Please enter your PIN"
                 sub_menu = "login"
-            else:
-                respose = "END You are currenly not permitted to use this service. Please contact Salaam bank to gain access"
-                return response
             current_screen = "main_menu"
             r.hmset(
                 session_id,
