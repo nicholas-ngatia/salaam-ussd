@@ -153,7 +153,7 @@ def ussd():
             selection = int(ussd_string) - 1
             acc_no = customer_details[selection]['account_number']
             balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'], '002')
-            if not balance["ACY_CURR_BAL"]:
+            if len(balance) == 0:
                 current_bal = 0
                 withdrawable_bal = 0
             else:
