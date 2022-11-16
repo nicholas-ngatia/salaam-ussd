@@ -151,7 +151,7 @@ def ussd():
             customer_details = ast.literal_eval(session['customer_details'])
             selection = int(ussd_string) - 1
             acc_no = customer_details[selection]['account_number']
-            balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'], '002')
+            balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'],  customer_details[selection]['account_branch'])
             if len(balance) == 0:
                 current_bal = 0
                 withdrawable_bal = 0
@@ -296,7 +296,7 @@ def ussd():
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
                 acc_no = customer_details[selection]['account_number']
-                statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'], '002')
+                statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'], customer_details[selection]['account_branch'])
                 if len(statement) == 0:
                     response = "CON No recent transactions found"
                 else:
