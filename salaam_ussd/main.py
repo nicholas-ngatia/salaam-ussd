@@ -25,7 +25,6 @@ def ussd():
         if ussd_string == "0":
             current_screen = session["previous_screen"]
             response = session["response"]
-            print(current_screen, sub_menu)
         if ussd_string == "00":
             current_screen = "main_menu"
         if current_screen == "password":
@@ -330,7 +329,6 @@ def ussd():
             elif sub_menu == "confirm_password":
                 if session['password'] == ussd_string:
                     result = utils.change_pin(phone_number, session['token'], session['old_password'], ussd_string)
-                    print(result)
                     if result['error_code'] == "00":
                         response = "CON PIN successfully changed"
                     else:
@@ -348,7 +346,6 @@ def ussd():
                     "response": response,
                 },
             )
-        print(sub_menu, current_screen)
         if current_screen == "main_menu" or current_screen == "main_menu_options" or current_screen == "first_time_login_confirm":
             return response
         else:
