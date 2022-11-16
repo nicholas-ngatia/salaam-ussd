@@ -157,7 +157,7 @@ def ussd():
                 current_bal = 0
                 withdrawable_bal = 0
             else:
-                current_bal = balance[0]["ACY_CURR_BAL"]
+                current_bal = balance[0]["ACY_CURR_BALANCE"]
                 withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
             response = f'CON Balances for account {acc_no}:\nCurrent balance: KES {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
             next_menu = 'get_balance'
