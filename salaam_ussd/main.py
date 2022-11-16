@@ -298,7 +298,7 @@ def ussd():
                 selection = int(ussd_string) - 1
                 acc_no = customer_details[selection]['account_number']
                 statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'], customer_details[selection]['account_branch'])
-                logging.info(f'Data returned {balance}')
+                logging.info(f'Data returned {statement}')
                 if len(statement) == 0:
                     response = "CON No recent transactions found"
                 else:
