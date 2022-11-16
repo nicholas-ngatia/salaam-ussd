@@ -304,7 +304,7 @@ def ussd():
                 else:
                     response = "CON "
                     for s in statement[:3]:
-                        response += f'{s["TRANDATE"]} - {s["NARRATION"]} - KES {s["AMOUNT"]}'
+                        response += f'{s["TRANDATE"]} - {s["NARRATION"]} - KES {s["AMOUNT"]}\n'
                 next_menu = "None"
             elif sub_menu == "change_password":
                 response = "CON Please enter new PIN:"
