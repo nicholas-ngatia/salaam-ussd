@@ -86,7 +86,6 @@ def check_customer_details(msisdn, token, imsi):
     response = requests.post(ussd_url, json=(data)).json()
     if response['error_code'] == '00':
         customer_details = response['error_desc']['customerdetails'][0]
-        print(customer_details)
         return customer_details
     else: 
         return False
@@ -138,7 +137,6 @@ def change_pin(msisdn, token, old_pin, new_pin):
         }
     }
     response = requests.post(ussd_url, json=data).json()
-    print(response)
     return response
 
 def login(msisdn, token, pin):
@@ -187,7 +185,6 @@ def account_balance(msisdn, token, customer_account, customer_branch):
     }
     response = requests.post(ussd_url, json=data).json()
     if response['error_code'] == '00':
-        print(response)
         return response['error_desc']
     else: 
         return False
@@ -280,9 +277,6 @@ def get_statement(msisdn):
             header,
             body
             )
-        for hist in [history.last_sent, history.last_received]:
-            print(etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True))
-        print(result)
     except Exception as e:
         raise Exception(e)
 
@@ -335,8 +329,6 @@ def create_transaction(msisdn, amount):
 
         response = requests.request("POST", b2c_url, headers=headers, data=payload)
 
-        print(response.text)
-        print(result)
     except Exception as e:
         raise Exception(e)
     
@@ -375,8 +367,3 @@ def initiate_airtime(phone_number, amount):
         return
     except Exception as e:
         return e
-
-# print(get_balance("254725460158"))
-# get_statement("+254725460158")
-# print(whitelist_check('254711891648'))
-# print(phone_number_validate('0711891648'))
