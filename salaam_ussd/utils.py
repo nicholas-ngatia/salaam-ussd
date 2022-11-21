@@ -240,9 +240,7 @@ def account_transfer(msisdn, token, customer_account, customer_branch, amount, o
             "security_stamp": security_stamp
         }
     }
-    print(data)
     response = requests.post(ussd_url, json=data).json()
-    print(response)
     if response['error_code'] == '00':
         return response['error_desc']
     else: 

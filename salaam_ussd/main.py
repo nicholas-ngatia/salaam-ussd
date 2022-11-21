@@ -177,7 +177,6 @@ def ussd():
                     response = "CON Please enter number to send to:"
                     next_menu = "airtime_amount"
             elif sub_menu == "airtime_amount":
-                print(utils.phone_number_validate(ussd_string))
                 if utils.phone_number_validate(ussd_string) == False:
                     response = "CON Invalid number input. Please try again:\n\n00 Main Menu"
                     return response
@@ -356,7 +355,6 @@ def ussd():
                     return response
                 else:
                     res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
-                    print(res)
                     if res:
                         if 'FCUBS_ERROR_RESP' in res['response_desc']:
                             response = (
@@ -464,7 +462,6 @@ def ussd():
                     "response": response,
                 },
             )
-        print(current_screen, sub_menu)
         if current_screen == "main_menu" or current_screen == "main_menu_options" or current_screen == "first_time_login_confirm":
             return response
         else:
