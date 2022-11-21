@@ -119,6 +119,7 @@ def ussd():
                 i = 1
                 for customer in customer_details:
                     acc_no += f'{i}. {customer["account_number"]}\n'
+                    i += 1
                 response = f'CON Please select the account you wish to check.\n {acc_no}'
                 current_screen = "balance_enquiry"
             elif ussd_string == "2" or sub_menu == "airtime_menu":
@@ -288,6 +289,7 @@ def ussd():
                 i = 1
                 for customer in customer_details:
                     acc_no += f'{i}. {customer["account_number"]}\n'
+                    i += 1
                 response = f'CON Please select the account you wish to check.\n{acc_no}'
                 next_menu = "ministatement"
             elif ussd_string == "2":
@@ -304,7 +306,7 @@ def ussd():
                 else:
                     response = "CON "
                     for s in statement[:3]:
-                        response += f'{s["TRANDATE"]} - {s["NARRATION"]} - KES {s["AMOUNT"]}\n'
+                        response += f'{s["TRANDATE"]} - {s["CRDR"]} - KES {s["AMOUNT"]}\n'
                 next_menu = "None"
             elif sub_menu == "change_password":
                 response = "CON Please enter new PIN:"
