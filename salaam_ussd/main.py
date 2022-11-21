@@ -56,7 +56,7 @@ def ussd():
             if sub_menu == "login":
                 details = utils.login(phone_number, session['token'], ussd_string)
                 if details:
-                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
+                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
                     current_screen = "main_menu_options"
                 else:
                     response = "CON Wrong PIN input. Please try again."
@@ -81,7 +81,7 @@ def ussd():
                     response = "CON Wrong PIN format. Please ensure it is 4 digits and try again."
                     return response
             else:
-                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
+                response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
                 current_screen = "main_menu_options"
             r.hmset(
                 session_id,
@@ -96,7 +96,7 @@ def ussd():
             if session['password'] == ussd_string:
                 result = utils.set_pin(phone_number, session['token'], ussd_string)
                 if result:
-                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime for account\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
+                    response = "CON Welcome to Salaam Microfinance Bank.\n1. Balance Enquiry\n2. Buy airtime\n3. Payments\n4. Send Money\n5. Withdraw Cash\n6. My Account"
                     current_screen = "main_menu_options"
                 else:
                     raise Exception
@@ -132,7 +132,7 @@ def ussd():
                 # )
                 # current_screen = "payments"
             elif ussd_string == "4":
-                response = "CON Please select what to use.\n1. Account transfer\n2. Send to Mpesa"
+                response = "CON Please select what to use:\n1. Account transfer\n2. Send to Mpesa"
                 current_screen = "send_money"
             elif ussd_string == "5":
                 response = "CON Coming soon! Please check back later!"
@@ -163,46 +163,82 @@ def ussd():
             response = f'CON Balances for account {acc_no}:\nCurrent balance: KES {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
             next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
-            if ussd_string == "1" or sub_menu == "airtime_amount":
-                response = "CON Please enter amount"
-                next_menu = "airtime_pin"
-                if sub_menu == "airtime_amount":
-                    msisdn = ussd_string
+            if sub_menu == "None":
+                if ussd_string == "1":
+                    response = "CON Please enter amount"
+                    next_menu = "airtime_account"
+                    r.hmset(
+                            session_id,
+                        {
+                            "phone_number": phone_number,
+                        },
+                        )
+                elif ussd_string == "2":
+                    response = "CON Please enter number to send to:"
+                    next_menu = "airtime_amount"
+            elif sub_menu == "airtime_amount":
+                print(utils.phone_number_validate(ussd_string))
+                if utils.phone_number_validate(ussd_string) == False:
+                    response = "CON Invalid number input. Please try again:\n\n00 Main Menu"
+                    return response
                 else:
-                    msisdn = phone_number
-                r.hmset(
+                    response = "CON Please enter amount"
+                    next_menu = "airtime_account"
+                    r.hmset(
+                            session_id,
+                        {
+                            "phone_number": ussd_string,
+                        },
+                        )
+            elif sub_menu == "airtime_account":
+                msisdn = session['phone_number']
+                if int(ussd_string) < 5 or int(ussd_string) > 100000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please try again"
+                    return response
+                else:
+                    customer_details = ast.literal_eval(session['customer_details'])
+                    acc_no = ""
+                    i = 1
+                    for customer in customer_details:
+                        acc_no += f'{i}. {customer["account_number"]}\n'
+                        i += 1
+                    response = f'CON Please select the account you wish to use.\n {acc_no}'
+                    next_menu = "airtime_confirm"
+                    r.hmset(
                         session_id,
+                        {
+                            "amount": ussd_string,
+                        },
+                )
+            elif sub_menu == "airtime_confirm":
+                customer_details = ast.literal_eval(session['customer_details'])
+                selection = int(ussd_string) - 1
+                response = f'CON Please confirm the details of the transaction\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\n1. Confirm'
+                r.hmset(
+                    session_id,
                     {
-                        "phone_number": msisdn,
+                        "account_number": customer_details[selection]["account_number"],
+                        "account_branch": customer_details[selection]["account_branch"],
                     },
                     )
-            elif ussd_string == "2":
-                response = "CON Please enter number to send to"
-                next_menu = "airtime_amount"
+                next_menu = "airtime_pin"
             elif sub_menu == "airtime_pin":
-                msisdn = session['phone_number']
-                if utils.phone_number_validate(msisdn):
-                    if int(ussd_string) < 5 or int(ussd_string) > 100000 or utils.int_check(ussd_string):
-                        response = "CON Invalid amount input. Please try again"
-                        return response
-                    else:
-                        response = "CON Enter PIN"
-                        next_menu = "airtime_confirm"
-                        r.hmset(
-                            session_id,
-                            {
-                                "amount": ussd_string,
-                            },
-                    )
-                else:
-                    response = "CON Invalid phone number input, please try again."
+                response = 'CON Please enter PIN:'
+                next_menu = 'airtime_complete'
+            elif sub_menu == "airtime_complete":
+                details = utils.login(phone_number, session['token'], ussd_string)
+                if not details:
+                    response = "CON Wrong PIN input. Please try again."
                     return response
-            elif sub_menu == "airtime_confirm":
-                utils.initiate_airtime(session['msisdn'], session['amount'])
-                response = (
-                    "CON Request received. Kindly wait as we process the transaction."
-                )
-                sub_menu = "None"
+                else:
+                    res = utils.airtime_transfer(session['phone_number'], session['token'], session['account_number'],  session['account_branch'], session['amount'])
+                    if res:
+                        response = (
+                            "CON Request received. Kindly wait as we process the transaction."
+                        )
+                    else:
+                        response = "CON An error has occurred, please try again."
+                    next_menu = "None"
             r.hmset(
                 session_id,
                 {
@@ -241,18 +277,96 @@ def ussd():
                 },
             )
         elif current_screen == "send_money":
-            if ussd_string == "1":
-                response = "CON You will receive a text message with instructions"
-                next_menu = "None"
-            elif ussd_string == "2":
-                response = "CON Please enter the amount"
-                next_menu = "mpesa_send_money"
-            elif sub_menu == "mpesa_send_money":
-                response = "CON Please enter PIN:"
-                next_menu = "mpesa_send_confirm"
-            elif sub_menu == "mpesa_send_confirm":
-                response = "CON Please wait as your transaction is processed."
-                next_menu = "None"
+            if sub_menu == "None":
+                if ussd_string == "1":
+                    response = "CON Select where to send money:\n1. To self\n2. To other account"
+                    next_menu = "account_transfer_start"
+                elif ussd_string == "2":
+                    response = "CON Coming soon! Please check back later"
+                    next_menu = "None"
+            elif sub_menu == "account_transfer_start":
+                if ussd_string == "1":
+                    customer_details = ast.literal_eval(session["customer_details"])
+                    if len(customer_details) == 1:
+                        response = "CON You cannot send to self with only 1 account\n\n00 Main Menu"
+                        return response
+                    acc_no = ""
+                    i = 1
+                    for customer in customer_details:
+                        acc_no += f'{i}. {customer["account_number"]}\n'
+                        i += 1
+                    response = f'CON Please select the account you would like to send to.\n{acc_no}'
+                elif ussd_string == "2":
+                    response = 'CON Please enter the account number you would like to send to:'
+                next_menu = "account_transfer_continue"
+            elif sub_menu == "account_transfer_continue":
+                acc_no = ussd_string
+                customer_details = ast.literal_eval(session['customer_details'])
+                if len(ussd_string) < 2:
+                    selection = int(ussd_string) - 1
+                    acc_no = customer_details[selection]['account_number']
+                acc_no_from = ""
+                i = 1
+                for customer in customer_details:
+                    acc_no_from += f'{i}. {customer["account_number"]}\n'
+                    i += 1
+                response = f'CON Please select account to send from:\n{acc_no_from}'
+                r.hmset(
+                    session_id,
+                    {
+                        "account_number": acc_no,
+                    },
+                    )                   
+                next_menu = "account_transfer_amount"
+            elif sub_menu == "account_transfer_amount":
+                customer_details = ast.literal_eval(session['customer_details'])
+                selection = int(ussd_string) - 1
+                acc_no_from = customer_details[selection]['account_number']
+                acc_branch = customer_details[selection]['account_branch']
+                r.hmset(
+                        session_id,
+                        {
+                            "account_number_from": acc_no_from,
+                            "account_branch": acc_branch,
+                        },
+                        ) 
+                response = "CON Please enter the amount to be sent:"
+                next_menu = "account_transfer_confirm"
+            elif sub_menu == "account_transfer_confirm":
+                if int(ussd_string) < 5 or int(ussd_string) > 100000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please try again"
+                    return response
+                else:
+                    next_menu = "airtime_confirm"
+                    r.hmset(
+                        session_id,
+                        {
+                            "amount": ussd_string,
+                        },
+                )
+                response = f'CON Please confirm the details:\nAccount from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\n1. Confrim'
+                next_menu = "account_transfer_pin"
+            elif sub_menu == "account_transfer_pin":
+                response = 'CON Please enter PIN:'
+                next_menu = 'account_transfer_complete'
+            elif sub_menu == "account_transfer_complete":
+                details = utils.login(phone_number, session['token'], ussd_string)
+                if not details:
+                    response = "CON Wrong PIN input. Please try again."
+                    return response
+                else:
+                    res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
+                    print(res)
+                    if res:
+                        if 'FCUBS_ERROR_RESP' in res['response_desc']:
+                            response = (
+                                f'CON An error occurred during the transaction: {res["response_desc"]["ERROR"]["EDESC"]}. Please try again'
+                            )
+                        else:
+                            response = "CON Request received. Kindly wait as we process the transaction."
+                    else:
+                        response = "CON An error has occurred, please try again."
+                    next_menu = "None"
             r.hmset(
                 session_id,
                 {
@@ -350,6 +464,7 @@ def ussd():
                     "response": response,
                 },
             )
+        print(current_screen, sub_menu)
         if current_screen == "main_menu" or current_screen == "main_menu_options" or current_screen == "first_time_login_confirm":
             return response
         else:

@@ -214,6 +214,71 @@ def account_ministatement(msisdn, token, customer_account, customer_branch):
     else: 
         return False
 
+def account_transfer(msisdn, token, customer_account, customer_branch, amount, offset_account):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}#{amount}#{offset_account}')
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "FCUBS",
+            "request_type": "TRANSFER_REQ",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "txntrn": "FTR",
+            "account": customer_account,
+            "branch":  customer_branch,
+            "offsetacc": offset_account,
+            "offsetbranch": customer_branch,
+            "currency": "KES",
+            "narration": f'Transfer from {customer_account} to {offset_account}',
+            "mobile": f'0{msisdn[3:]}',
+            "amount": amount,
+            "security_stamp": security_stamp
+        }
+    }
+    print(data)
+    response = requests.post(ussd_url, json=data).json()
+    print(response)
+    if response['error_code'] == '00':
+        return response['error_desc']
+    else: 
+        return False
+
+def airtime_transfer(msisdn, token, customer_account, customer_branch, amount):
+    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}#{amount}')
+    data = {
+        "message_validation": {
+            "api_user": "",
+            "api_password": "",
+            "token": b64token.decode('utf-8'),
+        },
+        "message_route": {
+            "interface": "AIRTIME",
+            "request_type": "AIRTIME_REQ",
+            "external_ref_number": ref_no
+        },
+        "message_body": {
+            "txntrn": "FTR",
+            "account": customer_account,
+            "branch":  customer_branch,
+            "currency": "KES",
+            "narration": f'Airtime request for {msisdn}',
+            "mobile": f'0{msisdn[3:]}',
+            "amount": amount,
+            "security_stamp": security_stamp
+        }
+    }
+    response = requests.post(ussd_url, json=data).json()
+    if response['error_code'] == '00':
+        return response['error_desc']
+    else: 
+        return False
+
+
 def get_airtime_token():
     token = base64.b64encode(f'{airtime_key} : {airtime_secret}')
     response = requests.request("POST", airtime_auth_url, headers = { 'Authorization': f'Bearer {token}' })
@@ -340,8 +405,8 @@ def int_check(ussd_string):
         return False
 
 def phone_number_validate(phone_number):
-    if (phone_number[:2] != "254" and len(phone_number) != 12):
-        if (phone_number[0] != "0" and len(phone_number) != 10):
+    if (phone_number[:2] != "254" or len(phone_number) != 12):
+        if (phone_number[0] != "0" or len(phone_number) != 10):
             return False
         else: 
             return True
