@@ -140,6 +140,8 @@ def ussd():
             elif ussd_string == "6":
                 response = "CON 1. Ministatement\n2. Change PIN"
                 current_screen = "my_account"
+            else:
+                    raise IndexError
             r.hmset(
                 session_id,
                 {
@@ -160,7 +162,7 @@ def ussd():
             else:
                 current_bal = balance[0]["ACY_CURR_BALANCE"]
                 withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
-            response = f'CON Balances for account {acc_no}:\nWithdrawable balance: KES {withdrawable_bal}'
+            response = f'CON Balances for account {acc_no}:\nCurrent Balance: {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
             next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if sub_menu == "None":
@@ -176,6 +178,8 @@ def ussd():
                 elif ussd_string == "2":
                     response = "CON Please enter number to send to:"
                     next_menu = "airtime_amount"
+                else:
+                    raise IndexError
             elif sub_menu == "airtime_amount":
                 if utils.phone_number_validate(ussd_string) == False:
                     response = "CON Invalid number input. Please try again:\n\n00 Main Menu"
@@ -283,6 +287,8 @@ def ussd():
                 elif ussd_string == "2":
                     response = "CON Coming soon! Please check back later"
                     next_menu = "None"
+                else:
+                    raise IndexError
             elif sub_menu == "account_transfer_start":
                 if ussd_string == "1":
                     customer_details = ast.literal_eval(session["customer_details"])
@@ -395,18 +401,21 @@ def ussd():
                 },
             )
         elif current_screen == "my_account":
-            if ussd_string == "1" and sub_menu != "ministatement":
-                customer_details = ast.literal_eval(session['customer_details'])
-                acc_no = ""
-                i = 1
-                for customer in customer_details:
-                    acc_no += f'{i}. {customer["account_number"]}\n'
-                    i += 1
-                response = f'CON Please select the account you wish to check.\n{acc_no}'
-                next_menu = "ministatement"
-            elif ussd_string == "2":
-                response = "CON Please enter old PIN:"
-                next_menu = "change_password"
+            if sub_menu == "None":
+                if ussd_string == "1":
+                    customer_details = ast.literal_eval(session['customer_details'])
+                    acc_no = ""
+                    i = 1
+                    for customer in customer_details:
+                        acc_no += f'{i}. {customer["account_number"]}\n'
+                        i += 1
+                    response = f'CON Please select the account you wish to check.\n{acc_no}'
+                    next_menu = "ministatement"
+                elif ussd_string == "2":
+                    response = "CON Please enter old PIN:"
+                    next_menu = "change_password"
+                else:
+                    raise IndexError
             elif sub_menu == "ministatement":
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
@@ -466,6 +475,10 @@ def ussd():
             return response
         else:
             return response + "\n\n00 Main menu"
+    
+    except IndexError:
+        logging.error(f'INVALID CHOICE INPUT FOR SESSION_ID {session_id}')
+        return "CON Invalid choice selected. Please try again" + session['response']
 
     except Exception as e:
         logging.error(f'AN ERROR HAS OCCURED FOR SESSION_ID {session_id}: {e}')
