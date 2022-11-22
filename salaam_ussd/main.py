@@ -120,7 +120,7 @@ def ussd():
                 for customer in customer_details:
                     acc_no += f'{i}. {customer["account_number"]}\n'
                     i += 1
-                response = f'CON Please select the account you wish to check.\n {acc_no}'
+                response = f'CON Please select the account you wish to check.\n{acc_no}'
                 current_screen = "balance_enquiry"
             elif ussd_string == "2" or sub_menu == "airtime_menu":
                 response = "CON Please select who you wish to buy airtime for.\n1. Self\n2. Other"
