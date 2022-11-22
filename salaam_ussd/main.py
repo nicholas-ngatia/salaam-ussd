@@ -417,7 +417,7 @@ def ussd():
                     response = "CON No recent transactions found"
                 else:
                     response = "CON "
-                    for s in statement[:3]:
+                    for s in statement:
                         response += f'{s["TRANDATE"]} - {s["CRDR"]} - KES {s["AMOUNT"]}\n'
                 next_menu = "None"
             elif sub_menu == "change_password":
