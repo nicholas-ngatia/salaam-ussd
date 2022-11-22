@@ -156,14 +156,17 @@ def ussd():
             acc_no = customer_details[selection]['account_number']
             balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'],  customer_details[selection]['account_branch'])
             logging.info(f'Data returned {balance}')
-            if len(balance) == 0:
-                current_bal = 0
-                withdrawable_bal = 0
+            if balance == False:
+                response = "CON An error occurred. Please try again later"
             else:
-                current_bal = balance[0]["ACY_CURR_BALANCE"]
-                withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
-            response = f'CON Balances for account {acc_no}:\nCurrent Balance: {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
-            next_menu = 'get_balance'
+                if len(balance) == 0:
+                    current_bal = 0
+                    withdrawable_bal = 0
+                else:
+                    current_bal = balance[0]["ACY_CURR_BALANCE"]
+                    withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
+                response = f'CON Balances for account {acc_no}:\nCurrent Balance: {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
+                next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if sub_menu == "None":
                 if ussd_string == "1":
