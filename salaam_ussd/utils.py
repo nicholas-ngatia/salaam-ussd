@@ -265,7 +265,7 @@ def airtime_transfer(msisdn, token, customer_account, customer_branch, amount):
             "branch":  customer_branch,
             "currency": "KES",
             "narration": f'Airtime request for {msisdn}',
-            "mobile": f'0{msisdn[3:]}',
+            "mobile": f'0{msisdn[3:]}' if msisdn[3:] == '254' else msisdn,
             "amount": amount,
             "security_stamp": security_stamp
         }
