@@ -83,7 +83,9 @@ def check_customer_details(msisdn, token, imsi):
             "security_stamp": security_stamp
         }
     }
-    response = requests.post(ussd_url, json=(data)).json()
+    logging.info(f'Sending request: {data} for validation with ref_no {ref_no}')
+    response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         customer_details = response['error_desc']['customerdetails'][0]
         return customer_details
@@ -109,7 +111,9 @@ def set_pin(msisdn, token, pin):
             "security_stamp": security_stamp
         }
     }
-    response = requests.post(ussd_url, json=(data)).json()
+    logging.info(f'Sending request: {data} for set pin with ref_no {ref_no}')
+    response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         customer_details = response['error_desc']['customerdetails']
         return customer_details
@@ -136,7 +140,9 @@ def change_pin(msisdn, token, old_pin, new_pin):
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for change pin with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     return response
 
 def login(msisdn, token, pin):
@@ -158,7 +164,9 @@ def login(msisdn, token, pin):
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for login with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         return response['error_desc']['customerdetails']
     else: 
@@ -183,7 +191,9 @@ def account_balance(msisdn, token, customer_account, customer_branch):
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for account balance with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         return response['error_desc']
     else: 
@@ -208,7 +218,9 @@ def account_ministatement(msisdn, token, customer_account, customer_branch):
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for ministatement with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         return response['error_desc']
     else: 
@@ -240,7 +252,9 @@ def account_transfer(msisdn, token, customer_account, customer_branch, amount, o
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for account transfer with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         return response['error_desc']
     else: 
@@ -270,7 +284,9 @@ def airtime_transfer(msisdn, token, customer_account, customer_branch, amount):
             "security_stamp": security_stamp
         }
     }
+    logging.info(f'Sending request: {data} for airtime with ref_no {ref_no}')
     response = requests.post(ussd_url, json=data).json()
+    logging.info(f'Response received for {ref_no}: {response}')
     if response['error_code'] == '00':
         return response['error_desc']
     else: 
