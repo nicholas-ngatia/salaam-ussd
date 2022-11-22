@@ -141,7 +141,7 @@ def ussd():
                 response = "CON 1. Ministatement\n2. Change PIN"
                 current_screen = "my_account"
             else:
-                    raise IndexError
+                raise IndexError
             r.hmset(
                 session_id,
                 {
