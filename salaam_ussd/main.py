@@ -165,7 +165,7 @@ def ussd():
                 else:
                     current_bal = balance[0]["ACY_CURR_BALANCE"]
                     withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
-                response = f'CON Balances for account {acc_no}:\nCurrent Balance: {current_bal}\nWithdrawable balance: KES {withdrawable_bal}'
+                response = f'CON Balances for account {acc_no}:\nActual Balance: {current_bal}\nAvailable Balance: KES {withdrawable_bal}'
                 next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if sub_menu == "None":
