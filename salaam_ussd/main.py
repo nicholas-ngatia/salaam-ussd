@@ -481,7 +481,7 @@ def ussd():
     
     except IndexError:
         logging.error(f'INVALID CHOICE INPUT FOR SESSION_ID {session_id}')
-        return "CON Invalid choice selected. Please try again" + session['response'][3:]
+        return session['response']
 
     except Exception as e:
         logging.error(f'AN ERROR HAS OCCURED FOR SESSION_ID {session_id}: {e}')
