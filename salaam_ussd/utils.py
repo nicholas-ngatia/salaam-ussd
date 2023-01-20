@@ -76,7 +76,7 @@ def set_pin(msisdn, token, pin):
     response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/setup', json=data, headers=header).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
-        return 
+        return response['data']['accounts']
     else: 
         return False
 
