@@ -10,7 +10,7 @@ from lxml import etree
 
 
 logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', level=logging.INFO)
-ussd_url = "http://10.54.66.16:8282/api/Solid/SubmitRequest"
+base_ussd_url = "http://10.54.66.16:80"
 
 history = HistoryPlugin()
 logging.info('STARTING APP')
@@ -37,250 +37,173 @@ def get_token():
 
 def get_session_token():
     data = {
-        "message_validation": {
-            "api_user": base64.b64encode(b'africastalking').decode('utf-8'),
-            "api_password": base64.b64encode(b'123456').decode('utf-8')
-        },
-        "message_route": {
-            "interface": "TOKEN"
-        }
-}
-    response = requests.post(ussd_url, json=data).json()
-    return response['error_desc']['token']
-
-def generate_securiy_credentials(msisdn, token, last_value):
-    b64token = base64.b64encode(token.encode('ascii'))
-    ref_no = nanoid.generate(size=20)
-    encoding = f'{token}#{ref_no}#{msisdn}#{last_value}'.encode('ascii')
-    security_stamp = base64.b64encode(encoding).decode('utf-8')
-    return b64token, ref_no, security_stamp
-
-
-def check_customer_details(msisdn, token, imsi):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, imsi)
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "MOBILE",
-            "request_type": "VALIDATE",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "mobile_number": msisdn,
-            "IMSI": imsi,
-            "security_stamp": security_stamp
-        }
+        "email": "itsupport@salaammfbank.co.ke",
+        "password": "@UssdAfricasTalking023"
     }
-    logging.info(f'Sending request: {data} for validation with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        customer_details = response['error_desc']['customerdetails'][0]
-        return customer_details
+    response = requests.post(base_ussd_url + "/api/login", json=data).json()
+    return response['api_token']
+
+def check_customer_details(msisdn, token):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
+    }
+    data = {
+            "telephone_number": msisdn,
+        }
+    logging.info(f'Sending request: {data} for validation with phone number {msisdn}')
+    response = requests.post(base_ussd_url + "/api/v1/ussd/validate", data=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        onboarded_status = response['data']
+        return onboarded_status
     else: 
         return False
 
 def set_pin(msisdn, token, pin):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, pin)
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "MOBILE",
-            "request_type": "SETPIN",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "mobile_number": msisdn,
-            "newpin": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
-            "security_stamp": security_stamp
-        }
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for set pin with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        customer_details = response['error_desc']['customerdetails']
-        return customer_details
+    data = {
+        "mobile_number": msisdn,
+        "new_pin": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
+        "new_pin_confirmation": base64.b64encode(pin.encode('ascii')).decode('utf-8')
+        }
+    logging.info(f'Sending request: {data} for set pin for phone number {msisdn}')
+    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/setup', json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return 
     else: 
         return False
 
 def change_pin(msisdn, token, old_pin, new_pin):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{new_pin}#{old_pin}')
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "MOBILE",
-            "request_type": "CHANGEPIN",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "mobile_number": msisdn,
-            "oldpin": base64.b64encode(old_pin.encode('ascii')).decode('utf-8'),
-            "newpin":  base64.b64encode(new_pin.encode('ascii')).decode('utf-8'),
-            "security_stamp": security_stamp
-        }
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for change pin with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    return response
+    data = {
+        "mobile_number": msisdn,
+        "old_pin": base64.b64encode(old_pin.encode('ascii')).decode('utf-8'),
+        "new_pin": base64.b64encode(new_pin.encode('ascii')).decode('utf-8'),
+        "new_pin_confirmation": base64.b64encode(new_pin.encode('ascii')).decode('utf-8')
+        }
+    logging.info(f'Sending request: {data} for set pin for phone number {msisdn}')
+    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/change', json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return True
+    else: 
+        return False
 
 def login(msisdn, token, pin):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, pin)
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "MOBILE",
-            "request_type": "LOGIN",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "mobile_number": msisdn,
-            "pin": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
-            "security_stamp": security_stamp
-        }
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for login with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        return response['error_desc']['customerdetails']
+    data = {
+            "telephone_number": msisdn,
+            "pin_number": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
+    }
+    logging.info(f'Sending request: {data} for login for phone number {msisdn}')
+    response = requests.post(base_ussd_url + "/api/v1/ussd/login", json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return response['data']['accounts']
     else: 
         return False
 
-def account_balance(msisdn, token, customer_account, customer_branch):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}')
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "COREBANKING",
-            "request_type": "BALANCE_REQ",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "CustomerAccount": customer_account,
-            "CustomerBranch":  customer_branch,
-            "security_stamp": security_stamp
-        }
+def account_balance(msisdn, token, customer_account):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for account balance with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        return response['error_desc']
+    data = {
+            "telephone_number": msisdn,
+            "account_number": customer_account
+    }
+    logging.info(f'Sending request: {data} for account balance with phone number {msisdn}')
+    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/balance", json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return response['data']
     else: 
         return False
 
-def account_ministatement(msisdn, token, customer_account, customer_branch):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}')
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "COREBANKING",
-            "request_type": "MINISTATEMENT_REQ",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "CustomerAccount": customer_account,
-            "CustomerBranch":  customer_branch,
-            "security_stamp": security_stamp
-        }
+def account_ministatement(msisdn, token, customer_account):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for ministatement with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        return response['error_desc']
+    data = {
+            "telephone_number": msisdn,
+            "account_number":  customer_account,
+    }
+    logging.info(f'Sending request: {data} for ministatement with phone number {msisdn}')
+    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/ministatement", json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return response['data']
     else: 
         return False
 
 def account_transfer(msisdn, token, customer_account, customer_branch, amount, offset_account):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}#{amount}#{offset_account}')
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
+    }
+    ref_no = nanoid.generate(size=12)
+    d = datetime.today().strftime('%Y-%m-%d')
     data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "FCUBS",
-            "request_type": "TRANSFER_REQ",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "txntrn": "FTR",
-            "account": customer_account,
-            "branch":  customer_branch,
-            "offsetacc": offset_account,
-            "offsetbranch": customer_branch,
-            "currency": "KES",
-            "narration": f'Transfer from {customer_account} to {offset_account}',
-            "mobile": f'0{msisdn[3:]}',
-            "amount": amount,
-            "security_stamp": security_stamp
-        }
+            "initiator": 2,
+            "trn_req_ref": nanoid.generate(size=12),
+            "customer_telephone": msisdn,
+            "trn_product": "CHWL",
+            "trn_acc": customer_account,
+            "trn_tx_branch":  customer_branch,
+            "trn_offset_acc": offset_account,
+            "trn_offset_branch": customer_branch,
+            "trn_ccy": "KES",
+            "trn_offset_ccy": "KES",
+            "trn_description": f'Transfer from {customer_account} to {offset_account}',
+            "trn_amount": amount,
+            "trn_offset_amount": amount,
+            "trn_date": '2023-03-02',
+            "trn_val_date": '2023-03-02'
     }
     logging.info(f'Sending request: {data} for account transfer with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/customer/transaction', json=data, headers=header).json()
     logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        return response['error_desc']
+    if response['error_code'] == '_001':
+        return response['data']
     else: 
         return False
 
-def airtime_transfer(msisdn, token, customer_account, customer_branch, amount):
-    b64token, ref_no, security_stamp = generate_securiy_credentials(msisdn, token, f'{customer_account}#{customer_branch}#{amount}')
-    data = {
-        "message_validation": {
-            "api_user": "",
-            "api_password": "",
-            "token": b64token.decode('utf-8'),
-        },
-        "message_route": {
-            "interface": "AIRTIME",
-            "request_type": "AIRTIME_REQ",
-            "external_ref_number": ref_no
-        },
-        "message_body": {
-            "txntrn": "FTR",
-            "account": customer_account,
-            "branch":  customer_branch,
-            "currency": "KES",
-            "narration": f'Airtime request for {msisdn}',
-            "mobile": f'0{msisdn[3:]}' if msisdn[3:] == '254' else msisdn,
-            "amount": amount,
-            "security_stamp": security_stamp
-        }
+def airtime_transfer(msisdn, token, customer_account, amount):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
     }
-    logging.info(f'Sending request: {data} for airtime with ref_no {ref_no}')
-    response = requests.post(ussd_url, json=data).json()
-    logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '00':
-        return response['error_desc']
+    data = {
+            "initiator": 2,
+            "account_number": customer_account,
+            "telephone_number":  f'254{msisdn[1:]}' if msisdn[0] == '0' else msisdn,
+            "purchase_amount": amount,
+    }
+    logging.info(f'Sending request: {data} for airtime for phone number ref_no {msisdn}')
+    response = requests.post(base_ussd_url + '/api/v1/ussd/airtime/sell', json=data, headers=header).json()
+    logging.info(f'Response received for {msisdn}: {response}')
+    if response['error_code'] == 0:
+        return True
     else: 
         return False
     

@@ -30,15 +30,15 @@ def ussd():
         if current_screen == "password":
             token = utils.get_session_token()
             logging.info(f'Token received: {token}')
-            result = utils.check_customer_details(phone_number, token, 'test')
+            result = utils.check_customer_details(phone_number, token)
             logging.info(f'Customer retrieved: {result}')
-            if not result:
+            if result['onboarded_status'] != 1:
                 response = "END You are currenly not permitted to use this service. Please contact Salaam bank to gain access"
                 return response
-            elif result['password_change'] == 1:
+            elif result['is_active'] == False:
                 response = "CON Welcome to Salaam Microfinance Bank. Please enter the 4 digit PIN you will be using to log in to the service"
                 sub_menu = "first_time_login"
-            elif result['password_change'] == 0:
+            elif result['is_active'] == True:
                 response = "CON Welcome back to Salaam Microfinance Bank. Please enter your PIN"
                 sub_menu = "login"
             current_screen = "main_menu"
@@ -154,19 +154,10 @@ def ussd():
             customer_details = ast.literal_eval(session['customer_details'])
             selection = int(ussd_string) - 1
             acc_no = customer_details[selection]['account_number']
-            balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'],  customer_details[selection]['account_branch'])
+            balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'])
             logging.info(f'Data returned {balance}')
-            if balance == False:
-                response = "CON An error occurred. Please try again later"
-            else:
-                if len(balance) == 0:
-                    current_bal = 0
-                    withdrawable_bal = 0
-                else:
-                    current_bal = balance[0]["ACY_CURR_BALANCE"]
-                    withdrawable_bal = balance[0]["ACY_WITHDRAWABLE_BAL"]
-                response = f'CON Balances for account {acc_no}:\nActual Balance: {current_bal}\nAvailable Balance: KES {withdrawable_bal}'
-                next_menu = 'get_balance'
+            response = f'CON Balances for account {acc_no}:\nActual Balance: {balance["current_balance"]}\nAvailable Balance: KES {balance["available_balance"]}'
+            next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if sub_menu == "None":
                 if ussd_string == "1":
@@ -224,27 +215,19 @@ def ussd():
                     session_id,
                     {
                         "account_number": customer_details[selection]["account_number"],
-                        "account_branch": customer_details[selection]["account_branch"],
+                        "account_branch": customer_details[selection]["branch_code"],
                     },
                     )
-                next_menu = "airtime_pin"
-            elif sub_menu == "airtime_pin":
-                response = 'CON Please enter PIN:'
                 next_menu = 'airtime_complete'
             elif sub_menu == "airtime_complete":
-                details = utils.login(phone_number, session['token'], ussd_string)
-                if not details:
-                    response = "CON Wrong PIN input. Please try again."
-                    return response
+                res = utils.airtime_transfer(session['phone_number'], session['token'], session['account_number'], session['amount'])
+                if res:
+                    response = (
+                        "CON Request received. Kindly wait as we process the transaction."
+                    )
                 else:
-                    res = utils.airtime_transfer(session['phone_number'], session['token'], session['account_number'],  session['account_branch'], session['amount'])
-                    if res:
-                        response = (
-                            "CON Request received. Kindly wait as we process the transaction."
-                        )
-                    else:
-                        response = "CON An error has occurred, please try again."
-                    next_menu = "None"
+                    response = "CON An error has occurred, please try again."
+                next_menu = "None"
             r.hmset(
                 session_id,
                 {
@@ -330,7 +313,7 @@ def ussd():
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
                 acc_no_from = customer_details[selection]['account_number']
-                acc_branch = customer_details[selection]['account_branch']
+                acc_branch = customer_details[selection]['branch_code']
                 r.hmset(
                         session_id,
                         {
@@ -353,27 +336,19 @@ def ussd():
                         },
                 )
                 response = f'CON Please confirm the details:\nAccount from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\n1. Confrim'
-                next_menu = "account_transfer_pin"
-            elif sub_menu == "account_transfer_pin":
-                response = 'CON Please enter PIN:'
                 next_menu = 'account_transfer_complete'
             elif sub_menu == "account_transfer_complete":
-                details = utils.login(phone_number, session['token'], ussd_string)
-                if not details:
-                    response = "CON Wrong PIN input. Please try again."
-                    return response
-                else:
-                    res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
-                    if res:
-                        if 'FCUBS_ERROR_RESP' in res['response_desc']:
-                            response = (
-                                f'CON An error occurred during the transaction: {res["response_desc"]["ERROR"]["EDESC"]}. Please try again'
-                            )
-                        else:
-                            response = "CON Request received. Kindly wait as we process the transaction."
+                res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
+                if res:
+                    if 'FCUBS_ERROR_RESP' in res['response_desc']:
+                        response = (
+                            f'CON An error occurred during the transaction: {res["response_desc"]["ERROR"]["EDESC"]}. Please try again'
+                        )
                     else:
-                        response = "CON An error has occurred, please try again."
-                    next_menu = "None"
+                        response = "CON Request received. Kindly wait as we process the transaction."
+                else:
+                    response = "CON An error has occurred, please try again."
+                next_menu = "None"
             r.hmset(
                 session_id,
                 {
@@ -423,14 +398,14 @@ def ussd():
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
                 acc_no = customer_details[selection]['account_number']
-                statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'], customer_details[selection]['account_branch'])
+                statement = utils.account_ministatement(phone_number, session['token'], customer_details[selection]['account_number'])
                 logging.info(f'Data returned {statement}')
                 if len(statement) == 0:
                     response = "CON No recent transactions found"
                 else:
                     response = "CON "
                     for s in statement:
-                        response += f'{s["TRANDATE"]} - {s["CRDR"]} - KES {s["AMOUNT"]}\n'
+                        response += f'{s["trx_trn_date"]} - {s["trx_drbrind"]} - KES {s["trx_lcyamt"]}\n'
                 next_menu = "None"
             elif sub_menu == "change_password":
                 response = "CON Please enter new PIN:"
@@ -457,7 +432,7 @@ def ussd():
             elif sub_menu == "confirm_password":
                 if session['password'] == ussd_string:
                     result = utils.change_pin(phone_number, session['token'], session['old_password'], ussd_string)
-                    if result['error_code'] == "00":
+                    if result:
                         response = "CON PIN successfully changed"
                     else:
                         response = "CON Wrong old PIN input. Please start again."
