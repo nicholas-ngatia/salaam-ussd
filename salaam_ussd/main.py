@@ -324,8 +324,8 @@ def ussd():
                 response = "CON Please enter the amount to be sent:"
                 next_menu = "account_transfer_confirm"
             elif sub_menu == "account_transfer_confirm":
-                if int(ussd_string) < 5 or int(ussd_string) > 100000 or not utils.int_check(ussd_string):
-                    response = "CON Invalid amount input. Please try again"
+                if int(ussd_string) > 70000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please ensure it is below 70000."
                     return response
                 else:
                     next_menu = "airtime_confirm"
@@ -379,8 +379,8 @@ def ussd():
                         )
             elif sub_menu == "mpesa_account":
                 msisdn = session['phone_number']
-                if int(ussd_string) < 5 or int(ussd_string) > 100000 or not utils.int_check(ussd_string):
-                    response = "CON Invalid amount input. Please try again"
+                if int(ussd_string) < 110 or int(ussd_string) > 125000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please ensure it is between 110 and 125000."
                     return response
                 else:
                     customer_details = ast.literal_eval(session['customer_details'])
