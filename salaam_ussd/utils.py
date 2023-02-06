@@ -206,6 +206,49 @@ def airtime_transfer(msisdn, token, customer_account, amount):
         return True
     else: 
         return False
+
+def mpesa_parties(token):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
+    }
+    logging.info(f'Sending for mpesa parties')
+    response = requests.get(base_ussd_url + '/api/v1/ussd/mpesa/parties', headers=header).json()
+    logging.info(f'Response received: {response}')
+    if response['error_code'] == 0:
+        return response['data']
+    else: 
+        return False
+
+def mpesa_transfer(msisdn, receiver_msisdn, token, customer_account, amount):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
+    }
+    ref_no = nanoid.generate(size=12)
+    d = datetime.today().strftime('%Y-%m-%d')
+    parties = mpesa_parties(token)
+    data = {
+            "initiator": 2,
+            'telephone_number': msisdn,
+            'receiver_telephone': receiver_msisdn,
+            'account_number': customer_account,
+            'transfer_amount': amount,
+            'tr_caller_party': parties['caller_party'],
+            'tr_initiator_party': parties['initiator_party'],
+            'tr_primary_party': parties['primary_party'],
+            'tr_remarks': f'Transfer of {amount} from {msisdn} to {receiver_msisdn}'
+
+    }
+    logging.info(f'Sending request: {data} for MPESA transfer with ref_no {ref_no}')
+    response = requests.post(base_ussd_url + '/api/v1/ussd/mpesa/transaction', json=data, headers=header).json()
+    logging.info(f'Response received for {ref_no}: {response}')
+    if response['error_code'] == 0:
+        return response['data']
+    else: 
+        return False
     
 def int_check(ussd_string):
     try:

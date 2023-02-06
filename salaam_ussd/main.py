@@ -271,8 +271,8 @@ def ussd():
                     response = "CON Select where to send money:\n1. To self\n2. To other account"
                     next_menu = "account_transfer_start"
                 elif ussd_string == "2":
-                    response = "CON Coming soon! Please check back later"
-                    next_menu = "None"
+                    response = "CON Select where to send the money:\n1. To self\n2. To other number"
+                    next_menu = "mpesa_transfer_start"
                 else:
                     raise IndexError
             elif sub_menu == "account_transfer_start":
@@ -346,6 +346,75 @@ def ussd():
                         )
                     else:
                         response = "CON Request received. Kindly wait as we process the transaction."
+                else:
+                    response = "CON An error has occurred, please try again."
+                next_menu = "None"
+            elif sub_menu == "mpesa_transfer_start":
+                if ussd_string == "1":
+                    response = "CON Please enter amount"
+                    next_menu = "mpesa_account"
+                    r.hmset(
+                            session_id,
+                        {
+                            "phone_number": phone_number,
+                        },
+                        )
+                elif ussd_string == "2":
+                    response = "CON Please enter number to send to:"
+                    next_menu = "mpesa_amount"
+                else:
+                    raise IndexError
+            elif sub_menu == "mpesa_amount":
+                if utils.phone_number_validate(ussd_string) == False:
+                    response = "CON Invalid number input. Please try again:\n\n00 Main Menu"
+                    return response
+                else:
+                    response = "CON Please enter amount"
+                    next_menu = "mpesa_account"
+                    r.hmset(
+                            session_id,
+                        {
+                            "phone_number": ussd_string,
+                        },
+                        )
+            elif sub_menu == "mpesa_account":
+                msisdn = session['phone_number']
+                if int(ussd_string) < 5 or int(ussd_string) > 100000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please try again"
+                    return response
+                else:
+                    customer_details = ast.literal_eval(session['customer_details'])
+                    acc_no = ""
+                    i = 1
+                    for customer in customer_details:
+                        acc_no += f'{i}. {customer["account_number"]}\n'
+                        i += 1
+                    response = f'CON Please select the account you wish to use.\n {acc_no}'
+                    next_menu = "mpesa_confirm"
+                    r.hmset(
+                        session_id,
+                        {
+                            "amount": ussd_string,
+                        },
+                )
+            elif sub_menu == "mpesa_confirm":
+                customer_details = ast.literal_eval(session['customer_details'])
+                selection = int(ussd_string) - 1
+                response = f'CON Please confirm the details of the transaction\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\n1. Confirm'
+                r.hmset(
+                    session_id,
+                    {
+                        "account_number": customer_details[selection]["account_number"],
+                        "account_branch": customer_details[selection]["branch_code"],
+                    },
+                    )
+                next_menu = 'mpesa_complete'
+            elif sub_menu == "mpesa_complete":
+                res = utils.mpesa_transfer(phone_number, session['phone_number'], session['token'], session['account_number'], session['amount'])
+                if res:
+                    response = (
+                        "CON Request received. Kindly wait as we process the transaction."
+                    )
                 else:
                     response = "CON An error has occurred, please try again."
                 next_menu = "None"
