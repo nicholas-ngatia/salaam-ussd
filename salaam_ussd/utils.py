@@ -182,10 +182,7 @@ def account_transfer(msisdn, token, customer_account, customer_branch, amount, o
     logging.info(f'Sending request: {data} for account transfer with ref_no {ref_no}')
     response = requests.post(base_ussd_url + '/api/v1/ussd/customer/transaction', json=data, headers=header).json()
     logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == '_001':
-        return response['data']
-    else: 
-        return False
+    return response
 
 def airtime_transfer(msisdn, token, customer_account, amount):
     header = {
@@ -202,10 +199,7 @@ def airtime_transfer(msisdn, token, customer_account, amount):
     logging.info(f'Sending request: {data} for airtime for phone number ref_no {msisdn}')
     response = requests.post(base_ussd_url + '/api/v1/ussd/airtime/sell', json=data, headers=header).json()
     logging.info(f'Response received for {msisdn}: {response}')
-    if response['error_code'] == 0:
-        return True
-    else: 
-        return False
+    return response
 
 def mpesa_parties(token):
     header = {
@@ -245,11 +239,8 @@ def mpesa_transfer(msisdn, receiver_msisdn, token, customer_account, amount):
     logging.info(f'Sending request: {data} for MPESA transfer with ref_no {ref_no}')
     response = requests.post(base_ussd_url + '/api/v1/ussd/mpesa/transaction', json=data, headers=header).json()
     logging.info(f'Response received for {ref_no}: {response}')
-    if response['error_code'] == 0:
-        return response['data']
-    else: 
-        return False
-    
+    return response
+
 def int_check(ussd_string):
     try:
         int(ussd_string)

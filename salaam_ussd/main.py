@@ -222,9 +222,12 @@ def ussd():
             elif sub_menu == "airtime_complete":
                 res = utils.airtime_transfer(session['phone_number'], session['token'], session['account_number'], session['amount'])
                 if res:
-                    response = (
-                        "CON Request received. Kindly wait as we process the transaction."
-                    )
+                    if res['error_code'] != 0:
+                        response = (
+                            f'CON {res["error_message"]}.'
+                        )
+                    else:
+                        response = "CON Request received. Kindly wait as we process the transaction."
                 else:
                     response = "CON An error has occurred, please try again."
                 next_menu = "None"
@@ -340,9 +343,9 @@ def ussd():
             elif sub_menu == "account_transfer_complete":
                 res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
                 if res:
-                    if 'FCUBS_ERROR_RESP' in res['response_desc']:
+                    if res['error_code'] != 0:
                         response = (
-                            f'CON An error occurred during the transaction: {res["response_desc"]["ERROR"]["EDESC"]}. Please try again'
+                            f'CON {res["error_message"]}.'
                         )
                     else:
                         response = "CON Request received. Kindly wait as we process the transaction."
@@ -412,9 +415,12 @@ def ussd():
             elif sub_menu == "mpesa_complete":
                 res = utils.mpesa_transfer(phone_number, session['phone_number'], session['token'], session['account_number'], session['amount'])
                 if res:
-                    response = (
-                        "CON Request received. Kindly wait as we process the transaction."
-                    )
+                    if res['error_code'] != 0:
+                        response = (
+                            f'CON {res["error_message"]}.'
+                        )
+                    else:
+                        response = "CON Request received. Kindly wait as we process the transaction."
                 else:
                     response = "CON An error has occurred, please try again."
                 next_menu = "None"
