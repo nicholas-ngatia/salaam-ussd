@@ -1,4 +1,5 @@
 import json
+import ssl
 import logging
 import requests
 import base64
@@ -10,7 +11,7 @@ from lxml import etree
 
 
 logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', level=logging.INFO)
-base_ussd_url = "http://10.54.66.16:80"
+base_ussd_url = "https://10.54.66.16"
 
 history = HistoryPlugin()
 logging.info('STARTING APP')
@@ -40,7 +41,7 @@ def get_session_token():
         "email": "itsupport@salaammfbank.co.ke",
         "password": "@UssdAfricasTalking023"
     }
-    response = requests.post(base_ussd_url + "/api/login", json=data).json()
+    response = requests.post(base_ussd_url + "/api/login", json=data, verify=False).json()
     return response['api_token']
 
 def check_customer_details(msisdn, token):
@@ -53,7 +54,7 @@ def check_customer_details(msisdn, token):
             "telephone_number": msisdn,
         }
     logging.info(f'Sending request: {data} for validation with phone number {msisdn}')
-    response = requests.post(base_ussd_url + "/api/v1/ussd/validate", data=data, headers=header).json()
+    response = requests.post(base_ussd_url + "/api/v1/ussd/validate", data=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         onboarded_status = response['data']
@@ -73,7 +74,7 @@ def set_pin(msisdn, token, pin):
         "new_pin_confirmation": base64.b64encode(pin.encode('ascii')).decode('utf-8')
         }
     logging.info(f'Sending request: {data} for set pin for phone number {msisdn}')
-    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/setup', json=data, headers=header).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/setup', json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         return response['data']['accounts']
@@ -93,7 +94,7 @@ def change_pin(msisdn, token, old_pin, new_pin):
         "new_pin_confirmation": base64.b64encode(new_pin.encode('ascii')).decode('utf-8')
         }
     logging.info(f'Sending request: {data} for set pin for phone number {msisdn}')
-    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/change', json=data, headers=header).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/onboard/pin/change', json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         return True
@@ -111,7 +112,7 @@ def login(msisdn, token, pin):
             "pin_number": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
     }
     logging.info(f'Sending request: {data} for login for phone number {msisdn}')
-    response = requests.post(base_ussd_url + "/api/v1/ussd/login", json=data, headers=header).json()
+    response = requests.post(base_ussd_url + "/api/v1/ussd/login", json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         return response['data']['accounts']
@@ -129,7 +130,7 @@ def account_balance(msisdn, token, customer_account):
             "account_number": customer_account
     }
     logging.info(f'Sending request: {data} for account balance with phone number {msisdn}')
-    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/balance", json=data, headers=header).json()
+    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/balance", json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         return response['data']
@@ -147,7 +148,7 @@ def account_ministatement(msisdn, token, customer_account):
             "account_number":  customer_account,
     }
     logging.info(f'Sending request: {data} for ministatement with phone number {msisdn}')
-    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/ministatement", json=data, headers=header).json()
+    response = requests.post(base_ussd_url + "/api/v1/ussd/customer/ministatement", json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     if response['error_code'] == 0:
         return response['data']
@@ -180,7 +181,7 @@ def account_transfer(msisdn, token, customer_account, customer_branch, amount, o
             "trn_val_date": '2023-03-02'
     }
     logging.info(f'Sending request: {data} for account transfer with ref_no {ref_no}')
-    response = requests.post(base_ussd_url + '/api/v1/ussd/customer/transaction', json=data, headers=header).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/customer/transaction', json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {ref_no}: {response}')
     return response
 
@@ -197,7 +198,7 @@ def airtime_transfer(msisdn, token, customer_account, amount):
             "purchase_amount": amount,
     }
     logging.info(f'Sending request: {data} for airtime for phone number ref_no {msisdn}')
-    response = requests.post(base_ussd_url + '/api/v1/ussd/airtime/sell', json=data, headers=header).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/airtime/sell', json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {msisdn}: {response}')
     return response
 
@@ -208,7 +209,7 @@ def mpesa_parties(token):
         'Accept': 'application/json'
     }
     logging.info(f'Sending for mpesa parties')
-    response = requests.get(base_ussd_url + '/api/v1/ussd/mpesa/parties', headers=header).json()
+    response = requests.get(base_ussd_url + '/api/v1/ussd/mpesa/parties', headers=header, verify=False).json()
     logging.info(f'Response received: {response}')
     if response['error_code'] == 0:
         return response['data']
@@ -237,7 +238,7 @@ def mpesa_transfer(msisdn, receiver_msisdn, token, customer_account, amount):
 
     }
     logging.info(f'Sending request: {data} for MPESA transfer with ref_no {ref_no}')
-    response = requests.post(base_ussd_url + '/api/v1/ussd/mpesa/transaction', json=data, headers=header).json()
+    response = requests.post(base_ussd_url + '/api/v1/ussd/mpesa/transaction', json=data, headers=header, verify=False).json()
     logging.info(f'Response received for {ref_no}: {response}')
     return response
 
