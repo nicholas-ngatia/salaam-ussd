@@ -1,40 +1,14 @@
-import json
-import ssl
 import logging
 import requests
 import base64
 import nanoid
-from zeep import client
-from zeep.plugins import HistoryPlugin
 from datetime import datetime
-from lxml import etree
 
 
 logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', level=logging.INFO)
 base_ussd_url = "https://10.54.12.76"
 
-history = HistoryPlugin()
 logging.info('STARTING APP')
-
-b2c_url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
-auth_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
-airtime_auth_url = 'https://api.safaricom.co.ke/oauth2/v3/generate?grant_type=client_credentials'
-airtime_url = 'https://prod.safaricom.co.ke/v1/pretups/api/recharge'
-transaction_key = ''
-transaction_secret = ''
-airtime_key = ''
-airtime_secret = ''
-
-def load_data():
-    with open('customers.json', "r") as f:
-        data = json.load(f)
-        f.close()
-    return data
-
-def get_token():
-    token = base64.b64encode(f'{transaction_key} : {transaction_secret}')
-    response = requests.request("GET", auth_url, headers = { 'Authorization': f'Bearer {token}' })
-    return response.json['access_token']
 
 def get_session_token():
     data = {
@@ -42,6 +16,7 @@ def get_session_token():
         "password": "@UssdAfricasTalking023"
     }
     response = requests.post(base_ussd_url + "/api/login", json=data, verify=False).json()
+    print(response)
     return response['api_token']
 
 def check_customer_details(msisdn, token):
