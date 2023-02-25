@@ -11,7 +11,7 @@ from lxml import etree
 
 
 logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', level=logging.INFO)
-base_ussd_url = "https://10.54.66.16"
+base_ussd_url = "https://10.54.12.76"
 
 history = HistoryPlugin()
 logging.info('STARTING APP')
