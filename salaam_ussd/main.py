@@ -382,8 +382,8 @@ def ussd():
                         )
             elif sub_menu == "mpesa_account":
                 msisdn = session['phone_number']
-                if int(ussd_string) < 110 or int(ussd_string) > 125000 or not utils.int_check(ussd_string):
-                    response = "CON Invalid amount input. Please ensure it is between 110 and 125000."
+                if int(ussd_string) < 10 or int(ussd_string) > 150000 or not utils.int_check(ussd_string):
+                    response = "CON Invalid amount input. Please ensure it is between 10 and 150000."
                     return response
                 else:
                     customer_details = ast.literal_eval(session['customer_details'])
