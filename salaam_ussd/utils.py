@@ -16,7 +16,6 @@ def get_session_token():
         "password": "@UssdAfricasTalking023"
     }
     response = requests.post(base_ussd_url + "/api/login", json=data, verify=False).json()
-    print(response)
     return response['api_token']
 
 def check_customer_details(msisdn, token):
