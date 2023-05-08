@@ -84,6 +84,7 @@ def login(msisdn, token, pin):
     data = {
             "telephone_number": msisdn,
             "pin_number": base64.b64encode(pin.encode('ascii')).decode('utf-8'),
+            "send_otp": 0
     }
     logging.info(f'Sending request: {data} for login for phone number {msisdn}')
     response = requests.post(base_ussd_url + "/api/v1/ussd/login", json=data, headers=header, verify=False).json()
