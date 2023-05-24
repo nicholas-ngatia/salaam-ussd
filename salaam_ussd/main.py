@@ -214,7 +214,7 @@ def ussd():
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
                 transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
-                response = f'CON Confirm details\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nCost: {transaction_cost}\n1. Confirm'
+                response = f'CON Phone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nTransaction Cost: KES {transaction_cost} incl of tax\n1. Confirm'
                 r.hmset(
                     session_id,
                     {
@@ -342,7 +342,7 @@ def ussd():
                         },
                 )
                 transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
-                response = f'CON Confirm details:\nAccount from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\nCost: KES {transaction_cost}\n1. Confrim'
+                response = f'CON Account from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\nTransaction cost: KES {transaction_cost} incl of tax\n1. Confrim'
                 next_menu = 'account_transfer_complete'
             elif sub_menu == "account_transfer_complete":
                 res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
@@ -408,7 +408,7 @@ def ussd():
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
                 transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
-                response = f'CON Confirm details\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nCost: {transaction_cost}\n1. Confirm'
+                response = f'CON Phone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nTransaction cost: KES {transaction_cost} incl of tax\n1. Confirm'
                 r.hmset(
                     session_id,
                     {
