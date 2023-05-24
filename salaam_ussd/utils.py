@@ -203,7 +203,7 @@ def calculate_cost(token, amount):
             "amount":  amount,
     }
     logging.info(f'Sending for cost')
-    response = requests.get(base_ussd_url + 'api/v1/ussd/charges/calculate', json=data, headers=header, verify=False).json()
+    response = requests.get(base_ussd_url + '/api/v1/ussd/charges/calculate', json=data, headers=header, verify=False).json()
     logging.info(f'Response received: {response}')
     if response['error_code'] == 0:
         return response['data']['transaction_cost']
