@@ -190,6 +190,25 @@ def mpesa_parties(token):
         return response['data']
     else: 
         return False
+    
+
+def calculate_cost(token, amount):
+    header = {
+        "Authorization": f"Bearer {token}",
+        'X-CSRF-TOKEN': '',
+        'Accept': 'application/json'
+    }
+    data = {
+            "charge_type": 1,
+            "amount":  amount,
+    }
+    logging.info(f'Sending for cost')
+    response = requests.get(base_ussd_url + 'api/v1/ussd/charges/calculate', json=data, headers=header, verify=False).json()
+    logging.info(f'Response received: {response}')
+    if response['error_code'] == 0:
+        return response['data']
+    else: 
+        return False
 
 def mpesa_transfer(msisdn, receiver_msisdn, token, customer_account, amount):
     header = {
