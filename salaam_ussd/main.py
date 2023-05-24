@@ -18,9 +18,9 @@ def ussd():
         ussd_string = ussd_string.split("*")[-1]
         logging.info(f'SERVING USSD SESSION {session_id} FROM {phone_number} - {ussd_string}')
         session = r.hgetall(session_id)
-        if True:
-            response = "END The service is currently undergoing maintenance, apologies for the disruption."
-            return response
+        # if True:
+        #     response = "END The service is currently undergoing maintenance, apologies for the disruption."
+        #     return response
         current_screen = "password"
         if session:
             sub_menu = session["sub_menu"] 
