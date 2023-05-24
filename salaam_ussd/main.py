@@ -213,7 +213,8 @@ def ussd():
             elif sub_menu == "airtime_confirm":
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
-                response = f'CON Please confirm the details of the transaction\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\n1. Confirm'
+                transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
+                response = f'CON Confirm details\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nCost: {transaction_cost}\n1. Confirm'
                 r.hmset(
                     session_id,
                     {
@@ -334,14 +335,14 @@ def ussd():
                     response = "CON Invalid amount input. Please ensure it is below 70000."
                     return response
                 else:
-                    next_menu = "airtime_confirm"
                     r.hmset(
                         session_id,
                         {
                             "amount": ussd_string,
                         },
                 )
-                response = f'CON Please confirm the details:\nAccount from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\n1. Confrim'
+                transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
+                response = f'CON Confirm details:\nAccount from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\nCost: KES {transaction_cost}\n1. Confrim'
                 next_menu = 'account_transfer_complete'
             elif sub_menu == "account_transfer_complete":
                 res = utils.account_transfer(phone_number, session['token'], session['account_number_from'], session['account_branch'], session['amount'], session['account_number'])
@@ -406,7 +407,8 @@ def ussd():
             elif sub_menu == "mpesa_confirm":
                 customer_details = ast.literal_eval(session['customer_details'])
                 selection = int(ussd_string) - 1
-                response = f'CON Please confirm the details of the transaction\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\n1. Confirm'
+                transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
+                response = f'CON Confirm details\nPhone number: {session["phone_number"]}\nAmount: KES {session["amount"]}\nAccount number: {customer_details[selection]["account_number"]}\nCost: {transaction_cost}\n1. Confirm'
                 r.hmset(
                     session_id,
                     {
