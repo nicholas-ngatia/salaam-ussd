@@ -159,7 +159,7 @@ def ussd():
             acc_no = customer_details[selection]['account_number']
             balance = utils.account_balance(phone_number, session['token'], customer_details[selection]['account_number'])
             logging.info(f'Data returned {balance}')
-            response = f'CON Balances for account {acc_no}:\nActual Balance: {balance["current_balance"]}\nAvailable Balance: KES {balance["available_balance"]}'
+            response = f'CON Request received. Kindly wait to receive an SMS with the account balance.'
             next_menu = 'get_balance'
         elif current_screen == "airtime_menu":
             if sub_menu == "None":
