@@ -340,8 +340,8 @@ def ussd():
                         {
                             "amount": ussd_string,
                         },
-                )
-                transaction_cost = utils.calculate_cost(amount=session["amount"], token=session['token'])
+                    )
+                transaction_cost = utils.calculate_cost(amount=ussd_string, token=session['token'])
                 response = f'CON Account from: {session["account_number_from"]}\nAccount to: {session["account_number"]}\nAmount: KES {ussd_string}\nTransaction cost: KES {transaction_cost} incl of tax\n1. Confrim'
                 next_menu = 'account_transfer_complete'
             elif sub_menu == "account_transfer_complete":
