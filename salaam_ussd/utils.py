@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 logging.basicConfig(format='%(asctime)s - %(message)s', filename='ussd_app.log', level=logging.INFO)
-base_ussd_url = "https://10.54.12.76"
+base_ussd_url = "https://10.54.12.77"
 
 logging.info('STARTING APP')
 
@@ -205,7 +205,7 @@ def calculate_cost(token, amount):
     logging.info(f'Sending for cost')
     response = requests.post(base_ussd_url + '/api/v1/ussd/charges/calculate', json=data, headers=header, verify=False).json()
     logging.info(f'Response received: {response}')
-    if response['error_code'] == 0:
+    if response['error_code'] == '0':
         return response['data']['transaction_cost']
     else: 
         return False
